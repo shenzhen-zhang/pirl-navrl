@@ -1,51 +1,66 @@
 # PIRL-NavRL
 
-PIRL-NavRL is a clean research repository for **Predictive Intent-Risk Learning for UAV local navigation**.
+PIRL-NavRL 是一个新的、干净的研究仓库，用于推进 **基于预测意图-风险的无人机局部导航强化学习**。
 
-This repository replaces the previous `pirl-nav-research` implementation as the forward route. The old lightweight simulator, deterministic policies, synthetic trainer, and review artifacts are not active components here.
+本仓库取代旧的 `pirl-nav-research` 作为后续主线。旧仓库里的轻量仿真器、手写策略、合成训练器和审查产物不再作为本仓库的有效实现代码。
 
-## Current platform decision
+## 当前平台决策
 
-Phase 1 uses **gym-pybullet-drones** as the lightweight UAV PyBullet training backbone.
+第一阶段使用 **gym-pybullet-drones** 作为轻量级无人机 PyBullet 训练底座。
 
-- Primary Phase 1 backbone: <https://github.com/learnsyslab/gym-pybullet-drones>
-- Long-term reference only: <https://github.com/Zhefan-Xu/NavRL>
-- Immediate training dependency: gym-pybullet-drones + Stable-Baselines3/PyBullet
-- Not immediate dependencies: Isaac Sim, ROS1/ROS2, NavRL training stack
+- 第一阶段主底座：<https://github.com/learnsyslab/gym-pybullet-drones>
+- 长期参考仓库：<https://github.com/Zhefan-Xu/NavRL>
+- 当前训练依赖：gym-pybullet-drones + Stable-Baselines3 + PyBullet
+- 当前不引入：Isaac Sim、ROS1/ROS2、NavRL 训练栈
 
-## Phase 1 objective
+## 第一阶段目标
 
-Phase 1 is a setup and integration phase, not a paper-result phase.
+第一阶段是环境配置和集成验证阶段，不是论文结果阶段。
 
-The objective is to:
+目标：
 
-1. Pull and document NavRL and gym-pybullet-drones as external references.
-2. Configure a reproducible local environment for gym-pybullet-drones.
-3. Verify built-in gym-pybullet-drones examples.
-4. Implement a simple PIRL-NavRL adapter/risk/shield proof-of-concept inside the gym-pybullet-drones integration layer.
-5. Establish project-management, artifact, and experiment rules before formal experiments begin.
+1. 拉取并记录 NavRL 和 gym-pybullet-drones。
+2. 配置可复现的本地 gym-pybullet-drones 环境。
+3. 验证 gym-pybullet-drones 自带示例。
+4. 在 gym-pybullet-drones 集成层上实现一个简单的 PIRL-NavRL adapter / risk / shield 演示。
+5. 先建立项目管理、产物管理和实验管理规则，再进入正式实验。
 
-## Scope boundaries
+## 第一阶段边界
 
-Allowed in Phase 1:
+允许：
 
-- local cloning of external repositories under `external/`
-- adapter/wrapper code around gym-pybullet-drones
-- small JSON/JSONL diagnostic outputs
-- import checks, smoke tests, and simple demo scripts
-- documentation of NavRL as a reference architecture
+- 在 `external/` 下本地克隆外部仓库
+- 围绕 gym-pybullet-drones 写 adapter / wrapper
+- 生成小型 JSON/JSONL 诊断结果
+- 写导入检查、smoke test 和简单演示脚本
+- 把 NavRL 作为长期参考架构记录下来
 
-Forbidden in Phase 1:
+禁止：
 
-- copying old `pirl-nav-research` active implementation code
-- writing a new simulator from scratch
-- training with Isaac Sim
-- attempting ROS deployment
-- committing checkpoints, videos, GIFs, TensorBoard logs, wandb runs, or large artifacts
-- claiming paper-level results
+- 复制旧 `pirl-nav-research` 的有效实现代码
+- 从零写新的仿真器
+- 使用 Isaac Sim 训练
+- 尝试 ROS 部署
+- 提交 checkpoint、视频、GIF、TensorBoard、wandb 或其他大产物
+- 声称论文级结果
 
-## Repository management
+## 项目结构原则
 
-Project-management rules are defined in [`docs/PROJECT_MANAGEMENT.md`](docs/PROJECT_MANAGEMENT.md).
+仓库结构保持简单：
 
-The first managed task is [`codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md`](codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md).
+```text
+pirl-navrl/
+  README.md
+  THIRD_PARTY_NOTICES.md
+  docs/
+  external/
+  codex_tasks/
+```
+
+第一阶段只放文档和任务文件。源码、脚本、配置和测试由 `TASK_01` 执行时再按需创建，避免提前堆目录。
+
+## 项目管理
+
+项目管理规则见 [`docs/PROJECT_MANAGEMENT.md`](docs/PROJECT_MANAGEMENT.md)。
+
+第一阶段任务见 [`codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md`](codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md)。
