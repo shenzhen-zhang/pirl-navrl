@@ -1,40 +1,44 @@
-# Platform Decision: Phase 1
+# 平台决策：第一阶段
 
-## Decision
+## 结论
 
-Phase 1 uses **gym-pybullet-drones** as the primary lightweight UAV training platform.
+第一阶段选择 **gym-pybullet-drones** 作为主要轻量级无人机训练平台。
 
-NavRL is retained as a long-term reference for Isaac Sim, ROS, deployment, and full dynamic-navigation architecture. It is not a Phase 1 training dependency.
+NavRL 保留为长期参考，用于理解 Isaac Sim、ROS、部署链路和完整动态导航系统设计。第一阶段不把 NavRL 作为训练依赖。
 
-## Why not raw PyBullet
+## 为什么不直接用裸 PyBullet
 
-Raw PyBullet is a physics engine, not a complete UAV RL research platform. Starting directly from raw PyBullet would require building environment contracts, tasks, logging, training integration, and evaluation infrastructure from scratch. That would recreate the failure mode of the previous repository.
+裸 PyBullet 是物理引擎，不是完整的无人机强化学习研究平台。
 
-## Why gym-pybullet-drones
+如果直接从裸 PyBullet 开始，我们需要自己补齐：环境接口、任务定义、训练接入、日志、评估和图表。这会重新走回“自研平台”的路线。
 
-`gym-pybullet-drones` is selected because it already provides:
+## 为什么选择 gym-pybullet-drones
 
-- PyBullet-based quadrotor simulation
-- Gymnasium compatibility
-- Stable-Baselines3 compatibility
-- built-in PID and RL examples
-- a route toward firmware/SITL-related integration
-- a lighter setup than Isaac Sim
+选择它的原因：
 
-## Why not NavRL immediately
+- 已有 PyBullet 四旋翼仿真
+- 兼容 Gymnasium
+- 兼容 Stable-Baselines3
+- 有内置 PID 和 RL 示例
+- 比 Isaac Sim 轻
+- 后续可以作为迁移到 NavRL / Isaac Sim 前的轻量物理验证平台
 
-NavRL is closer to the desired long-term UAV dynamic-navigation system, but its training stack relies on Isaac Sim and heavier GPU infrastructure. Current Phase 1 work must avoid heavy hardware dependencies and focus on a local lightweight setup.
+## 为什么第一阶段不直接用 NavRL
 
-## Relationship to Safety-Gymnasium / OmniSafe
+NavRL 更贴近长期目标，但训练栈依赖 Isaac Sim 和较重 GPU 环境。当前阶段先避免重硬件依赖，优先建立可本地运行的轻量训练底座。
 
-Safety-Gymnasium and OmniSafe remain useful as SafeRL benchmark references, but Phase 1 prioritizes UAV physics relevance over benchmark breadth.
+## Safety-Gymnasium / OmniSafe 的位置
 
-## Phase 1 scope
+Safety-Gymnasium 和 OmniSafe 仍然是重要的 SafeRL benchmark 参考，但第一阶段优先考虑 UAV 物理相关性，因此选择 gym-pybullet-drones。
 
-Phase 1 does not attempt paper-grade results. It establishes:
+## 第一阶段范围
 
-- external repo setup
-- local environment setup
-- import checks
-- built-in example checks
-- a small PIRL-NavRL adapter/risk/shield demo around gym-pybullet-drones
+第一阶段只做：
+
+- 外部仓库 setup
+- 本地环境配置
+- import 检查
+- 内置示例检查
+- 一个围绕 gym-pybullet-drones 的简单 PIRL-NavRL adapter / risk / shield 演示
+
+第一阶段不做论文结果。
