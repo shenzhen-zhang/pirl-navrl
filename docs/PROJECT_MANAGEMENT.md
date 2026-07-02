@@ -1,55 +1,57 @@
-# Project Management Rules
+# 项目管理规则
 
-This document defines how PIRL-NavRL work is planned, implemented, reviewed, and promoted.
+本文档规定 PIRL-NavRL 的任务、审查、实验和产物管理方式。
 
-## 1. Repository role
+## 1. 仓库定位
 
-`pirl-navrl` is the forward research repository. The previous `pirl-nav-research` repository is treated as historical exploration only. Do not port old active code unless a task explicitly approves a specific document-only reference.
+`pirl-navrl` 是新的主线研究仓库。旧 `pirl-nav-research` 只作为历史探索记录，不作为有效代码来源。
 
-## 2. Stage and task governance
+除非某个任务明确允许引用旧仓库中的某个文档片段，否则不得迁移旧仓库的 active code。
 
-- Work is driven by numbered task files under `codex_tasks/`.
-- Do not start an untracked implementation.
-- Do not create the next task until the current task has been implemented, reviewed, corrected, and accepted.
-- Every task must state scope, forbidden actions, acceptance criteria, and final report requirements.
-- Each task must identify whether outputs are setup diagnostics, training diagnostics, or paper-candidate results.
+## 2. 任务管理
 
-## 3. Platform governance
+- 所有实现工作必须由 `codex_tasks/` 下的编号任务驱动。
+- 不允许无任务实现。
+- 当前任务没有实现、审查、修正和确认前，不创建下一阶段任务。
+- 每个任务必须写清楚：目标、范围、禁止项、验收标准、最终报告要求。
+- 每个任务必须标注输出性质：环境诊断、训练诊断、论文候选结果，三者不能混淆。
 
-Phase 1 uses gym-pybullet-drones as the lightweight UAV PyBullet training backbone. NavRL is a long-term reference only.
+## 3. 平台管理
 
-Current prohibitions:
+第一阶段使用 gym-pybullet-drones 作为轻量级无人机 PyBullet 训练底座。NavRL 仅作为长期参考。
 
-- no Isaac Sim training
-- no ROS deployment
-- no custom simulator from scratch
-- no old pirl-nav-research active code
-- no paper-result claims
+当前禁止：
 
-## 4. Artifact policy
+- 不使用 Isaac Sim 训练
+- 不做 ROS 部署
+- 不从零写仿真器
+- 不复制旧 `pirl-nav-research` 的有效代码
+- 不声称论文级结果
 
-Never commit large or non-reviewable outputs by default.
+## 4. 产物管理
 
-Forbidden without explicit approval:
+默认不提交大文件和不可审查产物。
 
-- model checkpoints
-- videos
-- GIFs
-- TensorBoard logs
-- wandb runs
-- large rollout dumps
-- binary experiment archives
+未明确批准前禁止提交：
 
-Allowed by default:
+- 模型 checkpoint
+- 视频
+- GIF
+- TensorBoard 日志
+- wandb 运行记录
+- 大型 rollout dump
+- 二进制实验归档
 
-- small Markdown documentation
-- small YAML/JSON config files
-- small JSON/JSONL smoke-test summaries
-- source code and tests
+默认允许提交：
 
-## 5. Experiment traceability
+- Markdown 文档
+- 小型 YAML/JSON 配置
+- 小型 JSON/JSONL smoke-test 结果
+- 源码和测试
 
-Every experiment-producing script must record, at minimum:
+## 5. 实验追踪
+
+任何会产生实验结果的脚本，至少要记录：
 
 - git commit
 - task id
@@ -59,29 +61,45 @@ Every experiment-producing script must record, at minimum:
 - environment id
 - config path
 - metric source
-- whether outputs are diagnostic or paper-candidate
+- 输出性质：diagnostic 或 paper-candidate
 
-## 6. Review gate
+## 6. 审查门槛
 
-A task is not complete until its final report states:
+任务完成报告必须包含：
 
-- files changed
-- commands run
-- tests passed/failed
-- external dependencies used
-- artifacts generated
-- limitations
-- next manual decision required
+- 修改文件
+- 运行命令
+- 测试结果
+- 外部依赖
+- 生成产物
+- 当前限制
+- 下一步需要人工决定的问题
 
-## 7. Paper-grade escalation
+## 7. 论文级升级规则
 
-Phase 1 outputs are not paper results. Paper-grade experiments require a later task with:
+第一阶段输出不是论文结果。进入论文级实验前，必须另开任务并明确：
 
-- fixed train/eval protocol
+- 固定 train/eval protocol
 - baseline matrix
 - ablation matrix
-- multi-seed plan
-- result aggregation
-- figure/table generation
-- reproducibility notes
-- explicit artifact policy
+- multi-seed 计划
+- 结果聚合方式
+- 图表生成方式
+- 可复现记录
+- 产物提交策略
+
+## 8. 结构简约原则
+
+仓库目录宁可少，不要提前堆空目录。
+
+第一阶段只保留：
+
+```text
+README.md
+THIRD_PARTY_NOTICES.md
+docs/
+external/
+codex_tasks/
+```
+
+源码、脚本、配置和测试只在任务真正需要时创建。
