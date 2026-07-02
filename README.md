@@ -81,3 +81,44 @@ pirl-navrl/
 项目管理规则见 [`docs/PROJECT_MANAGEMENT.md`](docs/PROJECT_MANAGEMENT.md)。
 
 第一阶段任务见 [`codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md`](codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md)。
+
+## 第一阶段本地环境
+
+推荐环境：
+
+```bash
+conda create -n pirl-navrl-drones python=3.10
+conda activate pirl-navrl-drones
+bash scripts/setup_external_repos.sh
+pip install -e external/gym-pybullet-drones
+pip install -e .
+```
+
+检查安装：
+
+```bash
+python scripts/check_gym_pybullet_drones_install.py
+```
+
+查看 gym-pybullet-drones 内置示例：
+
+```bash
+python scripts/run_gym_pybullet_drones_examples.py
+```
+
+安全启动某个内置示例：
+
+```bash
+python scripts/run_gym_pybullet_drones_examples.py --run --example pid.py
+```
+
+运行第一阶段 PIRL-NavRL diagnostic demo：
+
+```bash
+python scripts/run_phase1_simple_pirl_navrl_demo.py \
+  --config configs/phase1_simple_demo.json
+```
+
+该 demo 只输出小型 JSONL 诊断记录，默认路径为
+`results/phase1_simple_demo_metrics.jsonl`。第一阶段输出均为 `diagnostic`，
+不是论文级结果。

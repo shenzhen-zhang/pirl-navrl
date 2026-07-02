@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pirl-navrl"
+version = "0.1.0"
+description = "Phase 1 PIRL-NavRL adapters and diagnostics for gym-pybullet-drones."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+drones = [
+  "gym-pybullet-drones",
+  "pybullet",
+  "stable-baselines3",
+]
+test = [
+  "pytest>=8",
+]
+
+[tool.setuptools.packages.find]
+include = ["pirl_navrl*"]

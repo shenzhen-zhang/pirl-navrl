@@ -1,0 +1,20 @@
+{
+  "task_id": "TASK_01",
+  "platform_id": "gym-pybullet-drones",
+  "algorithm_id": "phase1_heuristic_action_conditioned_risk_shield",
+  "environment_id": "hover-aviary-v0",
+  "seed": 0,
+  "result_kind": "diagnostic",
+  "risk": {
+    "threshold": 0.55,
+    "min_altitude_m": 0.15,
+    "max_speed_mps": 2.5,
+    "max_abs_action": 1.0,
+    "action_weight": 0.35,
+    "state_weight": 0.65
+  },
+  "demo": {
+    "steps": 16,
+    "output_path": "results/phase1_simple_demo_metrics.jsonl"
+  }
+}
