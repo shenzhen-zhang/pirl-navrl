@@ -103,3 +103,32 @@ Observed diagnostic run:
 - Final goal distance was about `0.33 m`.
 - Minimum clearance was negative, so this is a connectivity visualization, not
   a valid obstacle-avoidance result.
+
+## Live PyBullet GUI
+
+Run without generating GIF or video:
+
+```bash
+bash scripts/run_ego_pybullet_live_gui.sh
+```
+
+This starts the official EGO-Planner sidecar in Docker and opens a live PyBullet
+GUI on the host. The default scene is `ego_mockamap_box_v0`, a small
+mockamap-style box-obstacle scene. The GUI shows:
+
+- red boxes: synthetic obstacle pointcloud source
+- yellow sphere/line: tracked PyBullet diagnostic state
+- green line: official EGO `/planning/pos_cmd`
+
+Interface review status:
+
+- Odometry topic: `/visual_slam/odom` remapped to EGO `/odom_world` and `/grid_map/odom`.
+- Obstacle topic: `/pirl_navrl/cloud` remapped to EGO `/grid_map/cloud`.
+- Goal topic: `/move_base_simple/goal` consumed by EGO `waypoint_generator`.
+- Command topic: `/planning/pos_cmd` from EGO `traj_server`.
+- Frame: `world`, matching EGO `grid_map/frame_id` and `traj_server` output.
+
+Current limitation: this live bridge receives official EGO commands and shows
+clear lateral replanning behavior, but the simple PyBullet point-mass tracker
+does not yet reproduce the official EGO simulator's SO3-controlled behavior.
+Do not treat the current live view as a baseline-quality avoidance result.

@@ -90,7 +90,20 @@ def create_scene(first_record: dict, client: int) -> None:
     plane_collision = p.createCollisionShape(p.GEOM_PLANE, physicsClientId=client)
     p.createMultiBody(baseMass=0.0, baseCollisionShapeIndex=plane_collision, physicsClientId=client)
     for obstacle in first_record["obstacles"]:
-        if obstacle["kind"] == "cylinder":
+        if obstacle["kind"] == "box":
+            half_extents = [value / 2.0 for value in obstacle["size"]]
+            collision = p.createCollisionShape(
+                p.GEOM_BOX,
+                halfExtents=half_extents,
+                physicsClientId=client,
+            )
+            visual = p.createVisualShape(
+                p.GEOM_BOX,
+                halfExtents=half_extents,
+                rgbaColor=[0.75, 0.18, 0.16, 1.0],
+                physicsClientId=client,
+            )
+        elif obstacle["kind"] == "cylinder":
             collision = p.createCollisionShape(
                 p.GEOM_CYLINDER,
                 radius=obstacle["radius"],
@@ -123,8 +136,8 @@ def create_scene(first_record: dict, client: int) -> None:
             basePosition=obstacle["center"],
             physicsClientId=client,
         )
-    create_sphere([-4.0, 0.0, 1.0], 0.1, [0.1, 0.55, 1.0, 1.0], client)
-    create_sphere([4.0, 0.0, 1.0], 0.14, [0.15, 0.85, 0.25, 1.0], client)
+    create_sphere(first_record["position"], 0.1, [0.1, 0.55, 1.0, 1.0], client)
+    create_sphere(first_record["goal"], 0.14, [0.15, 0.85, 0.25, 1.0], client)
 
 
 def create_drone_marker(client: int) -> int:

@@ -1,6 +1,6 @@
 <launch>
   <arg name="map_size_x" value="10.0"/>
-  <arg name="map_size_y" value="10.0"/>
+  <arg name="map_size_y" value="6.0"/>
   <arg name="map_size_z" value="3.0"/>
   <arg name="odom_topic" value="/visual_slam/odom"/>
   <arg name="cloud_topic" value="/pirl_navrl/cloud"/>

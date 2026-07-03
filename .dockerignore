@@ -1,0 +1,16 @@
+external/
+results/
+runs/
+tmp/
+wandb/
+.git/
+__pycache__/
+*.pyc
+*.mp4
+*.gif
+*.avi
+*.mkv
+*.zip
+*.pt
+*.pth
+*.onnx
