@@ -79,6 +79,42 @@ baseline result.
 
 ## Official EGO To PyBullet Visualization
 
+Recommended route for checking original EGO behavior in PyBullet:
+
+```bash
+bash scripts/run_official_ego_pybullet_mirror.sh
+```
+
+This runs the official `ego_planner/run_in_sim.launch` unchanged in the Noetic
+Docker container. That launch owns the original map generator, `pcl_render_node`
+local sensing, EGO planner, `traj_server`, SO3 controller, and quadrotor
+simulator. The host PyBullet window is only a live mirror of the official ROS
+topics:
+
+- red points: official `/map_generator/global_cloud`
+- yellow sphere/line: official `/visual_slam/odom`
+- green line: official `/planning/pos_cmd`
+- green sphere: the published `/move_base_simple/goal`
+
+Short local validation on this machine:
+
+```json
+{
+  "command_received": true,
+  "final_distance_to_goal": 0.2239981077623934,
+  "final_position": [-8.099465204895884, 9.799844148774891, 0.9851858001733191],
+  "goal": [-8.0, 10.0, 1.0],
+  "map_received": true,
+  "records": 720
+}
+```
+
+This is the route to use when the question is whether the visualized behavior
+matches the original repository. It mirrors original EGO simulator behavior
+instead of replacing the original controller with a Python point-mass tracker.
+
+## Simplified PyBullet Diagnostic Visualization
+
 Run the end-to-end diagnostic bridge:
 
 ```bash
@@ -104,7 +140,7 @@ Observed diagnostic run:
 - Minimum clearance was negative, so this is a connectivity visualization, not
   a valid obstacle-avoidance result.
 
-## Live PyBullet GUI
+## Simplified Live PyBullet GUI
 
 Run without generating GIF or video:
 
@@ -131,14 +167,23 @@ Interface review status:
 - Command topic: `/planning/pos_cmd` from EGO `traj_server`.
 - Frame: `world`, matching EGO `grid_map/frame_id` and `traj_server` output.
 
-Current limitation: this live bridge receives official EGO commands and shows
-clear lateral replanning behavior, but the simple PyBullet point-mass tracker
-does not yet reproduce the official EGO simulator's SO3-controlled behavior.
-Do not treat the current live view as a baseline-quality avoidance result.
+Root cause of the poor visual/effect match in this simplified live bridge:
+
+- The original EGO loop is `map_generator/mockamap -> pcl_render_node ->
+  EGO grid map/planner -> traj_server -> so3_control ->
+  quadrotor_simulator_so3 -> /visual_slam/odom`.
+- This simplified bridge was `synthetic pointcloud -> EGO planner ->
+  /planning/pos_cmd -> Python point-mass tracker -> synthetic odom`.
+- Therefore it bypasses the original local sensing, SO3 controller, and
+  quadrotor dynamics, so it can verify topic connectivity but not original
+  avoidance quality.
+
+Do not treat this simplified live view as a baseline-quality avoidance result.
 
 For the original repository's visual quality and avoidance behavior, use the
-official simulator/RViz route instead:
+official mirror or RViz route instead:
 
 ```bash
+bash scripts/run_official_ego_pybullet_mirror.sh
 bash scripts/run_ego_planner_noetic_docker.sh rviz
 ```

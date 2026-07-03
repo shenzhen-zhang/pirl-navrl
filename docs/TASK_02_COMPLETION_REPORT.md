@@ -111,6 +111,38 @@ Latest diagnostic summary:
 
 The negative clearance means the current simple command tracker and bridge setup are not yet an obstacle-avoidance-quality result. It only verifies that official EGO command output is connected into the PyBullet diagnostic renderer.
 
+Official EGO simulator mirror into PyBullet:
+
+```bash
+bash scripts/run_official_ego_pybullet_mirror.sh
+```
+
+This is the corrected visualization path for comparing against the original
+EGO repository. It runs `ego_planner/run_in_sim.launch` unchanged and mirrors
+the official ROS topics into a host PyBullet GUI. Unlike the simplified bridge,
+it keeps the original `mockamap_node`, `pcl_render_node`, `traj_server`,
+`so3_control`, and `quadrotor_simulator_so3` loop.
+
+Local headless validation:
+
+```json
+{
+  "commands": 537,
+  "first_position": [-18.0, 0.0, 0.0],
+  "last_position": [-8.093292577417989, 9.804464309761444, 0.9846797088640223],
+  "map_records": 1,
+  "sampled_map_points": 3000,
+  "states": 720,
+  "summary": {
+    "command_received": true,
+    "final_distance_to_goal": 0.2239981077623934,
+    "goal_published": true,
+    "map_received": true,
+    "records": 720
+  }
+}
+```
+
 Live PyBullet GUI:
 
 ```bash
@@ -143,8 +175,8 @@ Effect audit:
 - The current simple PyBullet point-mass tracker is not equivalent to the original repository's SO3 controller.
 - Latest headless run received commands but still had `min_clearance = -0.3122420983811688`.
 - ROS logs show repeated `A star path searching !!! 0.2 seconds time limit exceeded` in the more complex bridge scene.
-- Therefore the interface is connected, but the visual effect is not yet consistent with the original EGO simulator quality.
-- For original EGO visual quality and behavior, use `bash scripts/run_ego_planner_noetic_docker.sh rviz`; the PyBullet live viewer is only an interface-debug view until the SO3/tracking stack is replaced.
+- Therefore the simplified bridge interface is connected, but its visual effect is not consistent with the original EGO simulator quality.
+- For original EGO visual quality and behavior in PyBullet, use `bash scripts/run_official_ego_pybullet_mirror.sh`. For original RViz visualization, use `bash scripts/run_ego_planner_noetic_docker.sh rviz`.
 
 ## 生成产物
 
@@ -157,6 +189,7 @@ Effect audit:
 - 主机原生 ROS sidecar 未安装；官方 EGO sidecar 目前通过 Docker Noetic 运行。
 - 当前 Python command bridge 只输出 desired velocity 和 normalized action-like vector，还没有绑定到具体 gym-pybullet-drones action mode。
 - 当前 official EGO -> PyBullet run 已能接收 `/planning/pos_cmd` 并打开 PyBullet live GUI，但最小 clearance 为负，不能作为避障效果或 baseline 结果。
+- 新增的 official EGO mirror 会显示原仓 simulator 结果，但 PyBullet 在该路线中是可视化镜像，不是替代原仓动力学的控制后端。
 - Obstacle bridge 第一版只支持静态 cylinder/sphere -> synthetic pointcloud。
 - `ego_like_static_v0` 是工程诊断场景，不是 EGO 官方场景复现。
 - Mock planner 只用于闭环与日志验证，不代表 EGO-Planner 算法行为。
