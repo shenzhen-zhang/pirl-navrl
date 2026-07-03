@@ -4,17 +4,13 @@
 
 Open。
 
-## 必须使用的技能
-
-使用 academic-research-suite skill。
-
 ## 仓库
 
-`https://github.com/zsz15964443357-lab/pirl-navrl`
+`https://github.com/shenzhen-zhang/pirl-navrl`
 
 ## 目标
 
-围绕 `gym-pybullet-drones` 初始化第一阶段。它是当前轻量级无人机 PyBullet 训练底座。NavRL 只作为长期参考。
+围绕 `gym-pybullet-drones` 初始化第一阶段。它是当前轻量级无人机 PyBullet 训练底座。NavRL 只作为长期参考架构，不作为 baseline。
 
 本任务要完成环境配置、外部仓库拉取、基础检查，以及一个简单的 PIRL-NavRL adapter / risk / shield 集成演示。本任务不得声称论文级结果。
 
@@ -25,6 +21,8 @@ Open。
 - 不使用 Isaac Sim 作为当前训练后端。
 - 不使用 ROS1/ROS2 作为当前部署后端。
 - 不训练 NavRL。
+- 不把 NavRL 当作 baseline。
+- 不迁移 NavRL 为 PyBullet baseline。
 - 不声称论文结果。
 - 不创建合成训练指标来冒充实验结果。
 - 不提交大产物。
@@ -35,7 +33,7 @@ Open。
 
 - `https://github.com/learnsyslab/gym-pybullet-drones`
 
-长期参考：
+长期参考架构：
 
 - `https://github.com/Zhefan-Xu/NavRL`
 
@@ -142,6 +140,8 @@ pip install -e .
 - 未创建自定义仿真器。
 - 未复制旧仓库有效代码。
 - 未引入 Isaac Sim 或 ROS 依赖。
+- 未训练 NavRL。
+- 未将 NavRL 作为 baseline。
 - 未提交大产物。
 
 ## Codex 最终报告要求
