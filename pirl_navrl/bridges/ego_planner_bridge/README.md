@@ -76,3 +76,30 @@ results/task02_ego_like_smoke.jsonl
 
 The output is diagnostic only and must not be treated as a paper-candidate
 baseline result.
+
+## Official EGO To PyBullet Visualization
+
+Run the end-to-end diagnostic bridge:
+
+```bash
+bash scripts/run_ego_pybullet_bridge_visual.sh
+```
+
+This starts the official EGO sidecar in the Noetic Docker container, publishes
+the `ego_like_static_v0` odometry and synthetic pointcloud from the bridge node,
+tracks `/planning/pos_cmd`, and renders the resulting PyBullet trace.
+
+Outputs:
+
+```text
+results/ego_pybullet_bridge/official_ego_pybullet_trace.jsonl
+results/ego_pybullet_bridge/official_ego_pybullet_bridge.gif
+results/ego_pybullet_bridge/official_ego_pybullet_bridge.mp4
+```
+
+Observed diagnostic run:
+
+- `/planning/pos_cmd` was received.
+- Final goal distance was about `0.33 m`.
+- Minimum clearance was negative, so this is a connectivity visualization, not
+  a valid obstacle-avoidance result.

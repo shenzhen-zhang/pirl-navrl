@@ -88,6 +88,28 @@ Official EGO sidecar Docker validation:
 - `roslaunch ego_planner run_in_sim.launch`: starts ROS master and EGO nodes.
 - `/planning/pos_cmd`: produced after publishing `/move_base_simple/goal`.
 - `roslaunch ego_planner simple_run.launch`: starts RViz through X11.
+- `bash scripts/run_ego_pybullet_bridge_visual.sh`: publishes PyBullet-side odometry/pointcloud to official EGO, tracks `/planning/pos_cmd`, and renders a PyBullet GIF/MP4.
+
+Official EGO -> PyBullet bridge visualization:
+
+```text
+results/ego_pybullet_bridge/official_ego_pybullet_trace.jsonl
+results/ego_pybullet_bridge/official_ego_pybullet_bridge.gif
+results/ego_pybullet_bridge/official_ego_pybullet_bridge.mp4
+```
+
+Latest diagnostic summary:
+
+```json
+{
+  "records": 258,
+  "first_command_step": 61,
+  "final_distance_to_goal": 0.3296130356263231,
+  "min_clearance": -0.4203350353828719
+}
+```
+
+The negative clearance means the current simple command tracker and bridge setup are not yet an obstacle-avoidance-quality result. It only verifies that official EGO command output is connected into the PyBullet diagnostic renderer.
 
 ## 生成产物
 
@@ -99,6 +121,7 @@ Official EGO sidecar Docker validation:
 
 - 主机原生 ROS sidecar 未安装；官方 EGO sidecar 目前通过 Docker Noetic 运行。
 - 当前 Python command bridge 只输出 desired velocity 和 normalized action-like vector，还没有绑定到具体 gym-pybullet-drones action mode。
+- 当前 official EGO -> PyBullet run 已能接收 `/planning/pos_cmd` 并生成可视化，但最小 clearance 为负，不能作为避障效果或 baseline 结果。
 - Obstacle bridge 第一版只支持静态 cylinder/sphere -> synthetic pointcloud。
 - `ego_like_static_v0` 是工程诊断场景，不是 EGO 官方场景复现。
 - Mock planner 只用于闭环与日志验证，不代表 EGO-Planner 算法行为。
