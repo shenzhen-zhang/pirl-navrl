@@ -20,6 +20,14 @@ git clone https://github.com/Zhefan-Xu/NavRL.git external/NavRL
 git clone https://github.com/ZJU-FAST-Lab/ego-planner.git external/ego-planner
 ```
 
+当前本地记录：
+
+| 仓库 | 本地 commit | 说明 |
+|---|---:|---|
+| gym-pybullet-drones | `9bc12bc` | Phase 1 PyBullet UAV 底座 |
+| NavRL | `3725bcc` | 长期参考架构，不作为 baseline |
+| ego-planner | `bfda512` | TASK_02 official sidecar bridge spike |
+
 ## 角色说明
 
 ### gym-pybullet-drones
@@ -53,3 +61,16 @@ git clone https://github.com/ZJU-FAST-Lab/ego-planner.git external/ego-planner
 - EGO-like PyBullet 简单静态障碍场景中是否能完成最小闭环诊断
 
 第二阶段不声称 EGO-Planner 论文结果复现，也不直接将其作为论文级 baseline。
+
+官方构建路线来自 EGO-Planner README：
+
+```bash
+sudo apt-get install libarmadillo-dev
+cd external/ego-planner
+catkin_make -DCMAKE_BUILD_TYPE=Release
+source devel/setup.bash
+roslaunch ego_planner rviz.launch
+roslaunch ego_planner run_in_sim.launch
+```
+
+本机 TASK_02 检测结果：`roscore` 和 `catkin_make` 不存在，因此未启动真实 ROS sidecar；当前只完成 mock bridge diagnostic smoke test。

@@ -1,0 +1,12 @@
+{
+  "task_id": "TASK_02",
+  "output_type": "diagnostic",
+  "scenario_id": "ego_like_static_v0",
+  "seed": 0,
+  "horizon_steps": 48,
+  "dt": 0.2,
+  "kp": 1.6,
+  "max_speed": 1.0,
+  "pointcloud_resolution": 0.45,
+  "output_path": "results/task02_ego_like_smoke.jsonl"
+}

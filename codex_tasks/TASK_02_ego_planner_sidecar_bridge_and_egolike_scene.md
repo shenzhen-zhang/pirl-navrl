@@ -2,7 +2,7 @@
 
 ## 0. 状态
 
-状态：计划中。
+状态：已完成 diagnostic mock bridge spike；真实 ROS sidecar 因本机缺少 ROS/catkin 未启动。
 
 本任务整理第二阶段方向。原则上应在 `TASK_01` 完成、审查并确认后执行；如需提前执行，必须由项目负责人明确批准。
 

@@ -14,6 +14,8 @@
 - 仓库：<https://github.com/ZJU-FAST-Lab/ego-planner>
 - 角色：第二阶段 official ROS sidecar bridge 可行性验证对象
 - 说明：传统局部规划强 baseline 候选，但官方项目是 ROS / catkin / C++ 工程，不是 Gymnasium policy
+- 许可证：GNU GPL v3（见本地 `external/ego-planner/LICENSE`）
+- 当前本地 commit：`bfda51284c8c1b476043255a8145ef925a3778a5`
 - 当前使用方式：本地 clone 到 `external/ego-planner/`，不提交其源码，不修改其核心 planner 算法
 - 当前状态：只做 diagnostic bridge spike；是否发展为 official EGO baseline 取决于第二阶段结论
 
