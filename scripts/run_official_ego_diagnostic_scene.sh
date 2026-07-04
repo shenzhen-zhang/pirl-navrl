@@ -7,6 +7,7 @@ IMAGE="${EGO_DOCKER_IMAGE:-osrf/ros:noetic-desktop-full}"
 SCENARIO="ego_static_obstacle_v0"
 SEED="${EGO_DIAGNOSTIC_SEED:-127}"
 MAP_POINTS="${EGO_MIRROR_MAP_POINTS:-20000}"
+VIEWER_STARTUP_TIMEOUT="${EGO_MIRROR_STARTUP_TIMEOUT:-45}"
 
 usage() {
   cat <<'EOF'
@@ -96,6 +97,24 @@ CONTAINER_TRACE_PATH="${CONTAINER_RESULTS_DIR}/trace.jsonl"
 CONTAINER_ROS_LOG_PATH="${CONTAINER_RESULTS_DIR}/official_ego_ros.log"
 CONTAINER_SCENARIO_METADATA_PATH="${CONTAINER_RESULTS_DIR}/scenario_metadata.json"
 
+case "${SCENARIO_ID}" in
+  ego_static_obstacle_v0)
+    DEFAULT_ROS_MASTER_PORT=11311
+    ;;
+  ego_dynamic_obstacle_v0)
+    DEFAULT_ROS_MASTER_PORT=11312
+    ;;
+  ego_sudden_motion_obstacle_v0)
+    DEFAULT_ROS_MASTER_PORT=11313
+    ;;
+  *)
+    DEFAULT_ROS_MASTER_PORT=11311
+    ;;
+esac
+ROS_MASTER_PORT="${EGO_ROS_MASTER_PORT:-${DEFAULT_ROS_MASTER_PORT}}"
+ROS_MASTER_URI="http://127.0.0.1:${ROS_MASTER_PORT}"
+CONTAINER_ROS_LOG_DIR="/tmp/roslogs_${SCENARIO_ID}_${ROS_MASTER_PORT}"
+
 mkdir -p "${RESULTS_DIR}"
 rm -f "${TRACE_PATH}" "${ROS_LOG_PATH}" "${SCENARIO_METADATA_PATH}"
 
@@ -119,6 +138,7 @@ docker run --rm \
   --net=host \
   --user "$(id -u):$(id -g)" \
   -e HOME=/tmp \
+  -e ROS_MASTER_URI="${ROS_MASTER_URI}" \
   -v "${ROOT_DIR}:/repo" \
   -v "${EGO_DIR}:/ego" \
   -w /repo \
@@ -126,6 +146,9 @@ docker run --rm \
   bash -lc "
     set -e
     mkdir -p '${CONTAINER_RESULTS_DIR}'
+    mkdir -p '${CONTAINER_ROS_LOG_DIR}'
+    export ROS_LOG_DIR='${CONTAINER_ROS_LOG_DIR}'
+    export ROS_MASTER_URI='${ROS_MASTER_URI}'
     source /opt/ros/noetic/setup.bash
     source /ego/devel/setup.bash
     roslaunch /repo/pirl_navrl/bridges/ego_planner_bridge/ego_custom_map_sidecar.launch \
@@ -155,10 +178,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-python3 "${ROOT_DIR}/scripts/view_official_ego_pybullet_mirror.py" --trace "${TRACE_PATH}"
+python3 "${ROOT_DIR}/scripts/view_official_ego_pybullet_mirror.py" \
+  --trace "${TRACE_PATH}" \
+  --startup-timeout "${VIEWER_STARTUP_TIMEOUT}"
 
 wait "${docker_pid}" || true
 
 echo "[ok] scenario: ${SCENARIO_ID}"
+echo "[ok] ros master: ${ROS_MASTER_URI}"
 echo "[ok] trace: ${TRACE_PATH}"
 echo "[ok] ros log: ${ROS_LOG_PATH}"
