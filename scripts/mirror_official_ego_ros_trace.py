@@ -358,7 +358,8 @@ def sample_sphere_points(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--duration", type=float, default=90.0)
+    parser.add_argument("--scenario-metadata", type=Path)
+    parser.add_argument("--duration", type=float)
     parser.add_argument("--rate-hz", type=float, default=30.0)
     parser.add_argument("--goal-x", type=float, default=-8.0)
     parser.add_argument("--goal-y", type=float, default=10.0)
@@ -382,6 +383,19 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if args.scenario_metadata is not None:
+        metadata = json.loads(args.scenario_metadata.read_text(encoding="utf-8"))
+        if args.duration is None:
+            args.duration = float(metadata["duration"])
+        args.goal_x = float(metadata["goal"][0])
+        args.goal_y = float(metadata["goal"][1])
+        args.goal_z = float(metadata["goal"][2])
+        args.scenario_id = metadata["scenario_id"]
+        args.obstacle_mode = metadata["obstacle_mode"]
+        args.scenario_notes = metadata["notes"]
+        args.scenario_obstacles_json = json.dumps(metadata["obstacles"], sort_keys=True)
+    if args.duration is None:
+        args.duration = 90.0
     rospy.init_node("pirl_navrl_official_ego_mirror")
     recorder = OfficialEgoMirrorRecorder(
         output_path=args.output,

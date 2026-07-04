@@ -81,8 +81,6 @@ items = {
     "MAP_SIZE_X": metadata["map_size"][0],
     "MAP_SIZE_Y": metadata["map_size"][1],
     "MAP_SIZE_Z": metadata["map_size"][2],
-    "SCENARIO_NOTES": metadata["notes"],
-    "SCENARIO_OBSTACLES_JSON": json.dumps(metadata["obstacles"], sort_keys=True),
 }
 for key, value in items.items():
     print(f"{key}={shlex.quote(str(value))}")
@@ -92,12 +90,30 @@ PY
 RESULTS_DIR="${ROOT_DIR}/results/official_ego_diagnostic/${SCENARIO_ID}"
 TRACE_PATH="${RESULTS_DIR}/trace.jsonl"
 ROS_LOG_PATH="${RESULTS_DIR}/official_ego_ros.log"
+SCENARIO_METADATA_PATH="${RESULTS_DIR}/scenario_metadata.json"
 CONTAINER_RESULTS_DIR="/repo/results/official_ego_diagnostic/${SCENARIO_ID}"
 CONTAINER_TRACE_PATH="${CONTAINER_RESULTS_DIR}/trace.jsonl"
 CONTAINER_ROS_LOG_PATH="${CONTAINER_RESULTS_DIR}/official_ego_ros.log"
+CONTAINER_SCENARIO_METADATA_PATH="${CONTAINER_RESULTS_DIR}/scenario_metadata.json"
 
 mkdir -p "${RESULTS_DIR}"
-rm -f "${TRACE_PATH}" "${ROS_LOG_PATH}"
+rm -f "${TRACE_PATH}" "${ROS_LOG_PATH}" "${SCENARIO_METADATA_PATH}"
+
+PYTHONPATH="${ROOT_DIR}:${PYTHONPATH:-}" python3 - "${SCENARIO}" "${SEED}" "${SCENARIO_METADATA_PATH}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+from pirl_navrl.scenarios.ego_official_diagnostic_scenarios import (
+    make_ego_official_diagnostic_scenario,
+)
+
+scenario = make_ego_official_diagnostic_scenario(sys.argv[1], seed=int(sys.argv[2]))
+Path(sys.argv[3]).write_text(
+    json.dumps(scenario.to_trace_metadata(), indent=2, sort_keys=True),
+    encoding="utf-8",
+)
+PY
 
 docker run --rm \
   --net=host \
@@ -125,16 +141,9 @@ docker run --rm \
     sleep 8
     python3 /repo/scripts/mirror_official_ego_ros_trace.py \
       --output '${CONTAINER_TRACE_PATH}' \
-      --duration '${DURATION}' \
-      --goal-x '${GOAL_X}' \
-      --goal-y '${GOAL_Y}' \
-      --goal-z '${GOAL_Z}' \
+      --scenario-metadata '${CONTAINER_SCENARIO_METADATA_PATH}' \
       --map-topic /pirl_navrl/custom_scene_cloud \
       --map-points '${MAP_POINTS}' \
-      --scenario-id '${SCENARIO_ID}' \
-      --obstacle-mode '${OBSTACLE_MODE}' \
-      --scenario-notes '${SCENARIO_NOTES}' \
-      --scenario-obstacles-json '${SCENARIO_OBSTACLES_JSON}' \
       --source-launch 'pirl_navrl/bridges/ego_planner_bridge/ego_custom_map_sidecar.launch' \
       --publish-custom-map
   " &
