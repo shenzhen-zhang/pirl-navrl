@@ -28,6 +28,10 @@ def make_step_record() -> RolloutStepRecord:
         collision=False,
         success=False,
         timeout=False,
+        safety_collision=False,
+        physical_collision=False,
+        custom_obstacles_physical=True,
+        obstacle_body_ids={"obs": 3},
     )
 
 

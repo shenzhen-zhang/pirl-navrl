@@ -1,0 +1,11 @@
+{
+  "task_id": "TASK_04",
+  "output_type": "diagnostic",
+  "scenario_id": "task03_static_nav_v0",
+  "seed": 0,
+  "policy_id": "goal_seeking_velocity_debug",
+  "platform_id": "gym_pybullet_drones_velocity_adapter_debug",
+  "output_path": "results/task04_gym_pybullet_static_nav_rollout.jsonl",
+  "max_speed": 1.0,
+  "visualize": false
+}

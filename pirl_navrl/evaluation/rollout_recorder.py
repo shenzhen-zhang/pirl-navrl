@@ -63,6 +63,10 @@ class RolloutStepRecord:
     collision: bool
     success: bool
     timeout: bool
+    safety_collision: bool | None = None
+    physical_collision: bool | None = None
+    custom_obstacles_physical: bool | None = None
+    obstacle_body_ids: dict[str, int] | None = None
     record_type: str = "step"
 
     def __post_init__(self) -> None:

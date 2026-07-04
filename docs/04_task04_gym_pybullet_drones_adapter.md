@@ -8,6 +8,20 @@ TASK_03 已完成统一 `ScenarioConfig`、`PolicyLike`、diagnostic env、rollo
 
 本阶段仍然只生成 diagnostic JSONL，不生成论文指标，不做 baseline，不报告 success rate。
 
+当前实现状态：
+
+- `GymPybulletDronesSimpleAdapter` 已接入真实 `VelocityAviary`，平台 ID 为
+  `gym_pybullet_drones_velocity_adapter_debug`。
+- 对外 action 固定为 `(3,)` normalized desired velocity，范围 `[-1, 1]`；
+  内部转换为 `VelocityAviary` 的 `(1, 4)` velocity command。
+- observation adapter 输出固定 19 维 flattened observation，并保留 dict schema。
+- reward module 输出 finite reward 和 `reward_terms`。
+- `Task04GymPybulletDronesRLEnv` 满足 Gymnasium reset/step API，并通过 SB3
+  `check_env` smoke check。
+- 自定义障碍物已按 `ScenarioConfig` 注入 VelocityAviary 使用的 PyBullet
+  client，作为静态 sphere/cylinder collision body；同时继续计算任务级
+  clearance / safety collision metric。
+
 ## 2. 开源项目调研参考范围
 
 TASK_04 可以仔细参考以下项目和文档：
@@ -80,6 +94,16 @@ PolicyLike desired_velocity
 
 不要在本阶段直接训练 RPM-level policy。RPM 会把低层控制和导航学习混在一起，增加调试成本。
 
+TASK_04 的 RL wrapper 使用 normalized desired velocity 作为 action：
+
+```text
+[-1, 1]^3 action -> desired_velocity = action * max_speed
+```
+
+rollout smoke test 中的 `goal_seeking_velocity_debug` 仍是无避障 debug policy。
+它只用于检查真实 env 接口、reward、termination 和 logging 链路，不代表导航
+性能。
+
 ### 3.2 保持 TASK_03 接口不变
 
 TASK_04 不重写 TASK_03 框架，只替换 platform adapter：
@@ -121,7 +145,10 @@ pirl_navrl/platforms/gym_pybullet_drones/simple_adapter.py
 gym_pybullet_drones_velocity_adapter_debug
 ```
 
-如果底层 env 暂不支持我们自定义障碍物碰撞，必须明确写成 diagnostic obstacle metrics only，不要声称障碍物已进入真实物理碰撞。
+当前 adapter 会把 `ScenarioConfig` 中的 sphere / cylinder 障碍物创建为
+PyBullet 静态 collision body。`collision` 同时考虑 PyBullet contact 和
+基于 `collision_radius` 的 safety clearance；后者用于保留可解释的任务级
+安全边界。
 
 ### 4.2 Action adapter
 
@@ -272,6 +299,15 @@ output_path: results/task04_gym_pybullet_static_nav_rollout.jsonl
 - 不报告 success rate；
 - 不生成视频；
 - 不提交 results。
+
+运行命令：
+
+```bash
+python3 scripts/check_task04_rl_ready_env.py
+python3 scripts/run_task04_gym_pybullet_drones_rollout.py
+```
+
+依赖缺失时脚本必须明确报错，不会 fallback 到 TASK_03 diagnostic kinematic env。
 
 ### 4.8 Visualization
 
