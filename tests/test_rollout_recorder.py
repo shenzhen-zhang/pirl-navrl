@@ -2,7 +2,12 @@ import json
 
 import pytest
 
-from pirl_navrl.evaluation.rollout_recorder import RolloutJsonlWriter, RolloutStepRecord, RolloutSummary
+from pirl_navrl.evaluation.rollout_recorder import (
+    RolloutInitialStateRecord,
+    RolloutJsonlWriter,
+    RolloutStepRecord,
+    RolloutSummary,
+)
 
 
 def make_step_record() -> RolloutStepRecord:
@@ -26,6 +31,26 @@ def make_step_record() -> RolloutStepRecord:
     )
 
 
+def make_initial_state_record() -> RolloutInitialStateRecord:
+    return RolloutInitialStateRecord(
+        task_id="TASK_03",
+        output_type="diagnostic",
+        platform_id="diagnostic_kinematic_env",
+        scenario_id="task03_static_nav_v0",
+        seed=0,
+        policy_id="goal_seeking_velocity_debug",
+        step=0,
+        position=(-4.0, 0.0, 1.0),
+        velocity=(0.0, 0.0, 0.0),
+        goal=(4.0, 0.0, 1.0),
+        distance_to_goal=8.0,
+        min_clearance=2.75,
+        collision=False,
+        success=False,
+        timeout=False,
+    )
+
+
 def test_rollout_jsonl_writer_writes_required_fields(tmp_path) -> None:
     path = tmp_path / "rollout.jsonl"
     metadata = {
@@ -36,10 +61,16 @@ def test_rollout_jsonl_writer_writes_required_fields(tmp_path) -> None:
     }
 
     with RolloutJsonlWriter(path, metadata) as writer:
+        writer.write_initial_state(make_initial_state_record())
         writer.write_step(make_step_record())
 
     records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-    step = records[1]
+    initial = records[1]
+    step = records[2]
+    assert initial["record_type"] == "initial_state"
+    assert initial["step"] == 0
+    assert initial["position"] == [-4.0, 0.0, 1.0]
+    assert initial["velocity"] == [0.0, 0.0, 0.0]
     for field in [
         "task_id",
         "output_type",

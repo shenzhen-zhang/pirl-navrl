@@ -90,6 +90,13 @@ pirl_navrl/scenarios/core.py
 - `success_radius`
 - `collision_radius`
 
+语义约定：
+
+- `ObstacleConfig.radius` 表示障碍物自身几何半径。
+- `ScenarioConfig.collision_radius` 表示 agent safety radius from obstacle
+  surface，也就是当前位置到障碍物表面的 clearance 小于等于该值时判为
+  collision。
+
 首个 debug 场景：
 
 ```text
@@ -148,6 +155,11 @@ pirl_navrl/policies/simple_policies.py
 - 可在 diagnostic env 中运行；
 - 固定 seed 可复现；
 - policy id 必须包含 `debug` 或 `diagnostic` 语义。
+
+`goal_seeking_velocity_debug` 是无避障 debug policy，只按当前位置到目标点
+的方向输出速度，不做 obstacle reasoning。在含障碍物场景中默认可能
+collision；这不代表 TASK_03 framework 失败，只代表该 debug policy 没有
+避障逻辑。
 
 ### 3.4 Diagnostic kinematic env
 
@@ -278,6 +290,9 @@ python3 scripts/run_task03_gym_pybullet_rollout.py --gui
 python3 scripts/view_task03_rollout.py --trace results/task03_static_nav_rollout.jsonl
 ```
 
+GUI 模式播放完 trace 后会保持 PyBullet 窗口打开，方便检查最终状态；需要
+手动关闭窗口。`--direct` headless 模式仍会自动退出。
+
 headless trace viewer 检查：
 
 ```bash
@@ -296,6 +311,10 @@ python3 scripts/view_task03_rollout.py --trace results/task03_static_nav_rollout
 - `policy_id`
 
 summary 是 diagnostic，不是 success rate。
+
+默认 summary 中如果出现 `collision: true`，只说明
+`goal_seeking_velocity_debug` 在该障碍物场景中撞到了 safety radius；它
+不是框架运行失败，也不是性能结论。
 
 ## 5. 配置文件
 

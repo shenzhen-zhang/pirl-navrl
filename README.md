@@ -97,6 +97,13 @@ python3 scripts/run_task03_gym_pybullet_rollout.py --gui
 
 这些命令只生成 diagnostic JSONL 和本地可视化，不产生论文指标或 success rate。
 
+默认 policy `goal_seeking_velocity_debug` 是无避障 debug policy，只朝目标
+方向输出速度。在含障碍物场景中默认可能 `collision: true`；这不代表框架
+失败，只代表该 debug policy 没有 obstacle reasoning。
+
+PyBullet GUI 播放完成后会保持窗口打开，方便检查场景、轨迹和最终状态；
+需要手动关闭窗口。`--direct` headless viewer 会自动退出。
+
 ## 项目结构原则
 
 仓库结构保持简单：

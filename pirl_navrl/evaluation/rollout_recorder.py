@@ -22,6 +22,30 @@ def _jsonable(value: Any) -> Any:
 
 
 @dataclass(frozen=True)
+class RolloutInitialStateRecord:
+    task_id: str
+    output_type: str
+    platform_id: str
+    scenario_id: str
+    seed: int
+    policy_id: str
+    step: int
+    position: tuple[float, float, float]
+    velocity: tuple[float, float, float]
+    goal: tuple[float, float, float]
+    distance_to_goal: float
+    min_clearance: float
+    collision: bool
+    success: bool
+    timeout: bool
+    record_type: str = "initial_state"
+
+    def __post_init__(self) -> None:
+        if self.output_type != "diagnostic":
+            raise ValueError("TASK_03 rollout initial states must use output_type='diagnostic'")
+
+
+@dataclass(frozen=True)
 class RolloutStepRecord:
     task_id: str
     output_type: str
@@ -85,6 +109,9 @@ class RolloutJsonlWriter:
 
     def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         self.handle.close()
+
+    def write_initial_state(self, record: RolloutInitialStateRecord) -> None:
+        self.write(record)
 
     def write_step(self, record: RolloutStepRecord) -> None:
         self.write(record)

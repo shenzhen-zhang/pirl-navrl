@@ -15,11 +15,12 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from pirl_navrl.evaluation.rollout_recorder import (  # noqa: E402
+    RolloutInitialStateRecord,
     RolloutJsonlWriter,
     RolloutStepRecord,
     RolloutSummary,
 )
-from pirl_navrl.platforms.diagnostic_kinematic_env import DiagnosticKinematicEnv  # noqa: E402
+from pirl_navrl.platforms.diagnostic_kinematic_env import DiagnosticKinematicEnv, distance  # noqa: E402
 from pirl_navrl.policies.simple_policies import GoalSeekingVelocityPolicy, RandomVelocityPolicy  # noqa: E402
 from pirl_navrl.scenarios.core import ScenarioConfig, make_scenario  # noqa: E402
 
@@ -87,6 +88,33 @@ def build_step_record(
     )
 
 
+def build_initial_state_record(
+    *,
+    scenario: ScenarioConfig,
+    platform_id: str,
+    policy_id: str,
+    min_clearance: float,
+) -> RolloutInitialStateRecord:
+    initial_distance = distance(scenario.start, scenario.goal)
+    return RolloutInitialStateRecord(
+        task_id="TASK_03",
+        output_type="diagnostic",
+        platform_id=platform_id,
+        scenario_id=scenario.scenario_id,
+        seed=scenario.seed,
+        policy_id=policy_id,
+        step=0,
+        position=scenario.start,
+        velocity=(0.0, 0.0, 0.0),
+        goal=scenario.goal,
+        distance_to_goal=initial_distance,
+        min_clearance=min_clearance,
+        collision=min_clearance <= scenario.collision_radius,
+        success=initial_distance <= scenario.success_radius,
+        timeout=False,
+    )
+
+
 def run_rollout(config: dict[str, Any]) -> RolloutSummary:
     scenario = make_scenario(config["scenario_id"], seed=int(config["seed"]))
     policy = make_policy(config["policy_id"], seed=scenario.seed)
@@ -108,6 +136,14 @@ def run_rollout(config: dict[str, Any]) -> RolloutSummary:
         "scenario": scenario.to_dict(),
     }
     with RolloutJsonlWriter(output_path, metadata) as writer:
+        writer.write_initial_state(
+            build_initial_state_record(
+                scenario=scenario,
+                platform_id=env.platform_id,
+                policy_id=policy.policy_id,
+                min_clearance=min_clearance,
+            )
+        )
         for _ in range(scenario.max_steps):
             action = policy.act(observation)
             observation, _reward, terminated, truncated, info = env.step(action)

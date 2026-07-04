@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import time
 from pathlib import Path
 from typing import Any
@@ -30,7 +29,7 @@ def load_trace(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], dict[s
         record_type = record.get("record_type")
         if record_type == "metadata":
             metadata = record
-        elif record_type == "step":
+        elif record_type in {"initial_state", "step"}:
             steps.append(record)
         elif record_type == "summary":
             summary = record
@@ -116,7 +115,7 @@ class Task03RolloutViewer:
 
     def update_step(self, step: dict[str, Any]) -> None:
         position = step["position"]
-        action = step["action"]
+        action = step.get("action") or [0.0, 0.0, 0.0]
         if self.drone is None:
             self.drone = self.create_sphere(position, 0.2, [1.0, 0.75, 0.05, 1.0])
         else:

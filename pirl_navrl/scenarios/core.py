@@ -33,6 +33,12 @@ class Bounds3D:
 
 @dataclass(frozen=True)
 class ObstacleConfig:
+    """Obstacle geometry.
+
+    `radius` is the physical obstacle geometry radius. For cylinders it is the
+    horizontal radius; for spheres it is the sphere radius.
+    """
+
     obstacle_id: str
     kind: ObstacleKind
     position: Vector3
@@ -55,6 +61,12 @@ class ObstacleConfig:
 
 @dataclass(frozen=True)
 class ScenarioConfig:
+    """Shared TASK_03 scenario definition.
+
+    `collision_radius` is the agent safety radius measured from the obstacle
+    surface, while each `ObstacleConfig.radius` is the obstacle geometry radius.
+    """
+
     scenario_id: str
     seed: int
     start: Vector3
