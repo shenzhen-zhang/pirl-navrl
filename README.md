@@ -104,6 +104,26 @@ python3 scripts/run_task03_gym_pybullet_rollout.py --gui
 PyBullet GUI 播放完成后会保持窗口打开，方便检查场景、轨迹和最终状态；
 需要手动关闭窗口。`--direct` headless viewer 会自动退出。
 
+## 第四阶段计划
+
+第四阶段是 **Pre-Training Gym-PyBullet-Drones RL-Ready Adapter**。
+
+第四阶段不开始训练，而是补齐训练前置工程：把第三阶段的统一 scenario / policy / rollout 框架接到真实 `gym-pybullet-drones` 平台，并稳定 action、observation、reward、termination、env checker 和 diagnostic rollout smoke test。
+
+第四阶段目标：
+
+1. 实现真实 `gym_pybullet_drones_velocity_adapter_debug`，不再只是 skeleton。
+2. 实现 desired velocity 到 gym-pybullet-drones action 的 adapter，优先 high-level velocity / PID / target-position，不直接训练 RPM policy。
+3. 实现 observation adapter 和 flatten observation，准备给 SB3/PPO 使用。
+4. 实现 reward module，包含 progress、distance、action、clearance、collision、success、timeout 等 reward terms。
+5. 实现 Gymnasium-compatible RL env wrapper，明确 `terminated = success or collision`，`truncated = timeout only`。
+6. 提供 `check_task04_rl_ready_env.py`，能在训练前检查 reset/step、space、reward finite 和 SB3 check_env。
+7. 提供 gym-pybullet-drones diagnostic rollout smoke test，并继续写统一 JSONL。
+
+第四阶段明确不做：训练 PPO、训练 PIRL、接 EGO baseline、多 seed benchmark、正式 baseline、success rate 报告、调参追求效果、提交 checkpoint/video/TensorBoard/wandb。
+
+第四阶段设计见 [`docs/04_task04_gym_pybullet_drones_adapter.md`](docs/04_task04_gym_pybullet_drones_adapter.md)。第四阶段任务见 [`codex_tasks/TASK_04_pretraining_gym_pybullet_drones_rl_ready_adapter.md`](codex_tasks/TASK_04_pretraining_gym_pybullet_drones_rl_ready_adapter.md)。
+
 ## 项目结构原则
 
 仓库结构保持简单：
