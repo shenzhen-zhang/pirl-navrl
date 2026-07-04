@@ -9,10 +9,10 @@ PIRL-NavRL 是一个新的、干净的研究仓库，用于推进 **基于预测
 第一阶段使用 **gym-pybullet-drones** 作为轻量级无人机 PyBullet 训练底座。
 
 - 第一阶段主底座：<https://github.com/learnsyslab/gym-pybullet-drones>
-- EGO-Planner：后续作为外部 ROS sidecar 桥接可行性验证对象；如果可行，再考虑发展为 official EGO baseline
-- NavRL：长期参考仓库，用于参考训练链路、代码结构、模块划分、部署路径和关键参数；**不作为 baseline**
+- EGO-Planner：已在第二阶段作为 official Docker/ROS sidecar diagnostic 验证对象；后续如果完成统一 action / scenario / metrics 闭环，再考虑发展为 official EGO baseline
+- NavRL：重要工程与算法实现参考源，可以仔细阅读、参考和适配其模块方法、参数组织、训练流程、动态导航实现和部署边界；**不作为 baseline**
 - 当前训练依赖：gym-pybullet-drones + Stable-Baselines3 + PyBullet
-- 第一阶段不引入：Isaac Sim、ROS1/ROS2、NavRL 训练栈
+- 当前不引入：Isaac Sim 训练、NavRL 训练栈、论文级结果声称
 
 NavRL 的参考边界见 [`docs/navrl_reference_scope.md`](docs/navrl_reference_scope.md)。
 
@@ -43,7 +43,6 @@ NavRL 的参考边界见 [`docs/navrl_reference_scope.md`](docs/navrl_reference_
 - 复制旧 `pirl-nav-research` 的有效实现代码
 - 从零写新的仿真器
 - 使用 Isaac Sim 训练
-- 尝试 ROS 部署
 - 提交 checkpoint、视频、GIF、TensorBoard、wandb 或其他大产物
 - 声称论文级结果
 
@@ -63,6 +62,26 @@ NavRL 的参考边界见 [`docs/navrl_reference_scope.md`](docs/navrl_reference_
 
 第二阶段设计见 [`docs/02_phase2_ego_sidecar_plan.md`](docs/02_phase2_ego_sidecar_plan.md)。第二阶段任务见 [`codex_tasks/TASK_02_ego_planner_sidecar_bridge_and_egolike_scene.md`](codex_tasks/TASK_02_ego_planner_sidecar_bridge_and_egolike_scene.md)。
 
+## 第三阶段计划
+
+第三阶段是 **Unified Gym-PyBullet-Drones Scenario / Policy / Rollout Framework**。
+
+第三阶段目标：
+
+1. 定义统一 `ScenarioConfig`。
+2. 定义统一 `PolicyLike` 接口。
+3. 实现 diagnostic simple policies。
+4. 实现 diagnostic kinematic env 作为最小闭环。
+5. 预留 gym-pybullet-drones adapter skeleton。
+6. 实现 JSONL rollout recorder。
+7. 提供 PyBullet 可视化，显示场景、障碍物、轨迹、目标点和动作方向。
+
+第三阶段允许详细参考 NavRL 和其他 gym-pybullet / Gymnasium / SB3 开源项目。可以复制小段通用 helper、schema、adapter pattern 或参数组织方式，但必须适配本项目、补测试、处理 attribution / license，不能整包迁移训练栈，也不能声称复现或比较 NavRL。
+
+第三阶段明确不做：训练 PPO、训练 PIRL、接 EGO baseline、多 seed benchmark、论文表格、success rate 报告、提交结果大产物。
+
+第三阶段设计见 [`docs/03_task03_unified_rollout_framework.md`](docs/03_task03_unified_rollout_framework.md)。第三阶段任务见 [`codex_tasks/TASK_03_unified_scenario_policy_rollout_framework.md`](codex_tasks/TASK_03_unified_scenario_policy_rollout_framework.md)。
+
 ## 项目结构原则
 
 仓库结构保持简单：
@@ -74,9 +93,13 @@ pirl-navrl/
   docs/
   external/
   codex_tasks/
+  pirl_navrl/
+  scripts/
+  tests/
+  configs/
 ```
 
-第一阶段只放文档和任务文件。源码、脚本、配置和测试由编号任务执行时再按需创建，避免提前堆目录。
+源码、脚本、配置和测试按编号任务逐步创建。不要提前堆目录，不提交 checkpoint、视频、GIF、TensorBoard、wandb 或其他大产物。
 
 ## 项目管理
 
@@ -84,7 +107,7 @@ pirl-navrl/
 
 第一阶段任务见 [`codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md`](codex_tasks/TASK_01_gym_pybullet_drones_phase1_setup_and_demo.md)。
 
-## 第一阶段本地环境
+## 本地环境
 
 推荐环境：
 
@@ -117,10 +140,5 @@ python scripts/run_gym_pybullet_drones_examples.py --run --example pid.py
 运行第一阶段 PIRL-NavRL diagnostic demo：
 
 ```bash
-python scripts/run_phase1_simple_pirl_navrl_demo.py \
-  --config configs/phase1_simple_demo.json
+python scripts/run_phase1_simple_pirl_navrl_demo.py
 ```
-
-该 demo 只输出小型 JSONL 诊断记录，默认路径为
-`results/phase1_simple_demo_metrics.jsonl`。第一阶段输出均为 `diagnostic`，
-不是论文级结果。
