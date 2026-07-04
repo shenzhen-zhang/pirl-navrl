@@ -1,4 +1,4 @@
-"""Command bridge from EGO-like trajectories to PyBullet velocity commands."""
+"""Future command helpers for mapping EGO-style commands to PyBullet actions."""
 
 from __future__ import annotations
 

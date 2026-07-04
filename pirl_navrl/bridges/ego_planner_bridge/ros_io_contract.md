@@ -1,27 +1,33 @@
 # EGO-Planner Bridge I/O Contract
 
-This contract is for TASK_02 diagnostics only. It keeps the official
-EGO-Planner process outside the PIRL-NavRL Python package and describes the
-minimum sidecar messages needed for a later ROS bridge.
+This contract is for TASK_02 diagnostics only. The active TASK_02 route runs
+the official EGO-Planner ROS loop inside Docker Noetic. PyBullet is currently a
+diagnostic scene/visualization helper, not the controller backend for official
+EGO.
+
+The conversion helpers in this package are retained as future
+gym-pybullet-drones baseline preparation. They are not used to report planner
+effect in the current TASK_02 route.
 
 ## Frames And Timing
 
-- World frame: `map`
+- Official EGO world frame: `world`
+- Future gym-pybullet bridge frame may use `map`, but must be remapped
+  explicitly.
 - Drone body frame: `base_link`
 - Units: meters, seconds, radians
 - Quaternion convention: `[x, y, z, w]`
-- Time source: PyBullet simulation time for smoke tests; ROS time for a real
-  sidecar run.
+- Time source: ROS time for the official Docker sidecar trace.
 
 ## State Bridge
 
-Direction: PyBullet drone state -> ROS odometry-shaped payload.
+Future direction: PyBullet drone state -> ROS odometry-shaped payload.
 
 Required fields:
 
 ```json
 {
-  "frame_id": "map",
+  "frame_id": "world",
   "child_frame_id": "base_link",
   "timestamp": 0.0,
   "position": [-4.0, 0.0, 1.0],
@@ -30,11 +36,14 @@ Required fields:
 }
 ```
 
-Target ROS shape for official sidecar work: `nav_msgs/Odometry`.
+Target ROS shape for future sidecar work: `nav_msgs/Odometry`.
+
+Current official route uses `/visual_slam/odom` from
+`quadrotor_simulator_so3`; PIRL-NavRL records it but does not replace it.
 
 ## Obstacle Bridge
 
-Direction: PyBullet obstacle primitives -> synthetic pointcloud.
+Future direction: PyBullet obstacle primitives -> synthetic pointcloud.
 
 The first version samples only static `cylinder` and `sphere` primitives:
 
@@ -46,48 +55,47 @@ The first version samples only static `cylinder` and `sphere` primitives:
 }
 ```
 
-Target ROS shape for official sidecar work: `sensor_msgs/PointCloud2`.
-Depth-image emulation is deliberately out of scope for TASK_02.
+Target ROS shape for future sidecar work: `sensor_msgs/PointCloud2`.
+Current official route uses `mockamap_node -> /map_generator/global_cloud` and
+`pcl_render_node` from the upstream launch.
+
+Dynamic and sudden-motion obstacle scenarios are currently config/trace hooks
+only. TASK_02 does not claim dynamic obstacle injection into official EGO until
+a ROS pointcloud updater or map-generator override is implemented.
 
 ## Goal Bridge
 
-Direction: PyBullet goal -> EGO planning target.
+Direction in current route: TASK_02 runner publishes one
+`/move_base_simple/goal` to official EGO.
 
 The first version supports one target point:
 
 ```json
 {
-  "frame_id": "map",
+  "frame_id": "world",
   "timestamp": 0.0,
   "position": [4.0, 0.0, 1.0]
 }
 ```
 
-Target ROS shape is expected to be a simple position goal command. Exact topic
-mapping must be verified against the selected EGO launch file with `rqt_graph`
-and `rosnode info`.
+Target ROS shape: `geometry_msgs/PoseStamped`.
 
 ## Command Bridge
 
-Direction: EGO trajectory or position command -> desired velocity -> PyBullet
-action-like diagnostic vector.
+Direction in current route: official EGO `traj_server` publishes
+`quadrotor_msgs/PositionCommand` on `/planning/pos_cmd`; official
+`so3_control` and `quadrotor_simulator_so3` consume it through the upstream
+loop. PIRL-NavRL records command positions for diagnostics.
 
-First tracker:
-
-```text
-desired_velocity = kp * (next_waypoint - current_position)
-desired_velocity = clip(desired_velocity, max_speed)
-```
-
-The Python smoke test logs both `desired_velocity` and a normalized
-`[-1, 1]` action-like vector. A later gym-pybullet-drones integration should
-map this into the selected environment's velocity or RPM action space.
+A later gym-pybullet-drones baseline may map EGO commands into a selected
+velocity/RPM/action mode, but TASK_02 does not do that mapping as planner
+effect evidence.
 
 ## TASK_02 Local Status
 
-The local smoke path uses mock EGO-like waypoints when ROS or catkin are not
-available. The JSONL field `bridge_status` distinguishes:
+Active route:
 
-- `mock_ros_unavailable`: ROS/catkin executables are missing; mock bridge used.
-- `ros_sidecar_available_not_launched`: ROS/catkin appear installed, but the
-  official sidecar was not launched by the smoke script.
+- `route`: `official_ego_docker_sidecar`
+- `source_launch`: `ego_planner/run_in_sim.launch`
+- trace schema only; not baseline metrics
+- PyBullet mirror is visualization/diagnostic only

@@ -41,8 +41,8 @@ roslaunch ego_planner rviz.launch
 roslaunch ego_planner run_in_sim.launch
 ```
 
-TASK_02 does not run or modify official planner internals. It documents the
-sidecar interface and runs a mock bridge when ROS is unavailable.
+TASK_02 does not run or modify official planner internals. The current active
+route is the official EGO-Planner Docker/ROS sidecar diagnostic.
 
 ## Local Docker Route On Ubuntu 22.04
 
@@ -62,27 +62,14 @@ Observed local status:
 - Publishing `/move_base_simple/goal` produces `/planning/pos_cmd`.
 - `roslaunch ego_planner simple_run.launch` starts RViz through X11.
 
-## Local Smoke Test
+## Official EGO Diagnostic Scene Runner
+
+Main TASK_02 route:
 
 ```bash
-python3 scripts/run_phase2_ego_like_smoke.py
-```
-
-Default output:
-
-```text
-results/task02_ego_like_smoke.jsonl
-```
-
-The output is diagnostic only and must not be treated as a paper-candidate
-baseline result.
-
-## Official EGO To PyBullet Visualization
-
-Recommended route for checking original EGO behavior in PyBullet:
-
-```bash
-bash scripts/run_official_ego_pybullet_mirror.sh
+bash scripts/run_official_ego_diagnostic_scene.sh --scenario ego_static_obstacle_v0
+bash scripts/run_official_ego_diagnostic_scene.sh --scenario ego_dynamic_obstacle_v0
+bash scripts/run_official_ego_diagnostic_scene.sh --scenario ego_sudden_motion_obstacle_v0
 ```
 
 This runs the official `ego_planner/run_in_sim.launch` unchanged in the Noetic
@@ -96,6 +83,12 @@ topics:
 - yellow sphere/line: official `/visual_slam/odom`
 - green line: official `/planning/pos_cmd`
 - green sphere: the published `/move_base_simple/goal`
+
+The compatibility shortcut below runs the static scenario:
+
+```bash
+bash scripts/run_official_ego_pybullet_mirror.sh
+```
 
 Short local validation on this machine:
 
@@ -119,15 +112,30 @@ For debugging the raw pointcloud instead:
 
 ```bash
 python3 scripts/view_official_ego_pybullet_mirror.py \
-  --trace results/ego_official_mirror/live_trace.jsonl \
+  --trace results/official_ego_diagnostic/ego_static_obstacle_v0/trace.jsonl \
   --map-style points
 ```
 
+## Diagnostic Scene Suite
+
+Scenario definitions live in
+`pirl_navrl/scenarios/ego_official_diagnostic_scenarios.py`.
+
+- `ego_static_obstacle_v0`: observes official EGO behavior in the upstream
+  static `mockamap_node` pointcloud.
+- `ego_dynamic_obstacle_v0`: records a continuous-motion obstacle config and
+  future injection hook. Current official launch does not inject it.
+- `ego_sudden_motion_obstacle_v0`: records a sudden-motion obstacle config and
+  future injection hook. Current official launch does not inject it.
+
+Do not claim dynamic or sudden-motion avoidance success until a ROS pointcloud
+updater or map-generator override is connected to official EGO.
+
 ## Removed Simplified PyBullet Bridge
 
-The earlier simplified ROS/PyBullet bridge was removed from the active scripts
-because it was useful only for topic-connectivity debugging and produced a
-misleading visual result:
+The earlier mock EGO-like route and simplified ROS/PyBullet bridge were removed
+from the active TASK_02 route because they were useful only for early
+interface/debug experiments and produced misleading planner-effect narratives:
 
 - The original EGO loop is `map_generator/mockamap -> pcl_render_node ->
   EGO grid map/planner -> traj_server -> so3_control ->

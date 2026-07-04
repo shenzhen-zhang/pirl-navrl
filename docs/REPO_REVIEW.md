@@ -62,9 +62,11 @@
 
 ### 风险 2：EGO official bridge 可能跑不通
 
-EGO-Planner 原生是 ROS/catkin/C++ 项目。若当前环境无法支持 ROS，应完成 mock bridge，并在完成报告中说明真实 bridge 阻塞原因。
+EGO-Planner 原生是 ROS/catkin/C++ 项目。当前 TASK_02 统一使用 Docker
+Noetic 运行 official sidecar；不要再把早期接口实验作为主路线或效果证据。
 
-建议：TASK_02 结束时必须给出“继续 official EGO sidecar”或“回退 EGO-style Python baseline”的明确建议。
+建议：TASK_02 输出必须明确区分 official EGO trace、PyBullet mirror 和 future
+gym-pybullet-drones baseline hook。
 
 ### 风险 3：Phase 1 diagnostic demo 不能被误读为算法结果
 

@@ -33,6 +33,10 @@ class OfficialEgoMirrorRecorder:
         goal_delay: float,
         map_topic: str,
         map_points: int,
+        scenario_id: str,
+        obstacle_mode: str,
+        scenario_notes: str,
+        scenario_obstacles_json: str,
     ) -> None:
         self.output_path = output_path
         self.duration = duration
@@ -41,6 +45,11 @@ class OfficialEgoMirrorRecorder:
         self.goal_delay = goal_delay
         self.map_topic = map_topic
         self.map_points = map_points
+        self.scenario_id = scenario_id
+        self.obstacle_mode = obstacle_mode
+        self.scenario_notes = scenario_notes
+        self.scenario_obstacles = parse_json_list(scenario_obstacles_json)
+        self.start_time = rospy.Time.now()
         self.odom: Optional[Odometry] = None
         self.command: Optional[PositionCommand] = None
         self.map_received = False
@@ -57,13 +66,13 @@ class OfficialEgoMirrorRecorder:
         self.write_record(
             {
                 "record_type": "metadata",
-                "task_id": "TASK_02",
                 "mode": "official_ego_original_loop_mirror",
-                "source_launch": "ego_planner/run_in_sim.launch",
                 "odom_topic": "/visual_slam/odom",
                 "command_topic": "/planning/pos_cmd",
                 "map_topic": map_topic,
-                "goal": list(goal),
+                "scenario_notes": scenario_notes,
+                "scenario_obstacles": self.scenario_obstacles,
+                "dynamic_obstacle_injection": dynamic_injection_status(obstacle_mode),
             }
         )
 
@@ -94,6 +103,7 @@ class OfficialEgoMirrorRecorder:
         self.write_record(
             {
                 "record_type": "map",
+                "elapsed": self.elapsed_since_start(),
                 "frame_id": msg.header.frame_id or "world",
                 "source_topic": self.map_topic,
                 "points": points,
@@ -165,8 +175,23 @@ class OfficialEgoMirrorRecorder:
         self.write_record(record)
 
     def write_record(self, record: dict) -> None:
-        self.handle.write(json.dumps(record, sort_keys=True) + "\n")
+        full_record = {
+            "task_id": "TASK_02",
+            "output_type": "diagnostic",
+            "route": "official_ego_docker_sidecar",
+            "source_launch": "ego_planner/run_in_sim.launch",
+            "scenario_id": self.scenario_id,
+            "obstacle_mode": self.obstacle_mode,
+            "goal": list(self.goal),
+            "timestamp": rospy.Time.now().to_sec(),
+            "elapsed": self.elapsed_since_start(),
+            **record,
+        }
+        self.handle.write(json.dumps(full_record, sort_keys=True) + "\n")
         self.handle.flush()
+
+    def elapsed_since_start(self) -> float:
+        return (rospy.Time.now() - self.start_time).to_sec()
 
     def odom_position(self) -> Optional[list[float]]:
         if self.odom is None:
@@ -197,6 +222,21 @@ def distance(left: list[float], right: tuple[float, float, float]) -> float:
     return math.sqrt(sum((left[index] - right[index]) ** 2 for index in range(3)))
 
 
+def parse_json_list(value: str) -> list:
+    if not value:
+        return []
+    decoded = json.loads(value)
+    if not isinstance(decoded, list):
+        raise ValueError("scenario obstacles JSON must decode to a list")
+    return decoded
+
+
+def dynamic_injection_status(obstacle_mode: str) -> str:
+    if obstacle_mode == "static":
+        return "official_mockamap_static_cloud"
+    return "not_supported_by_current_official_launch_future_hook_only"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
@@ -208,6 +248,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--goal-delay", type=float, default=6.0)
     parser.add_argument("--map-topic", default="/map_generator/global_cloud")
     parser.add_argument("--map-points", type=int, default=20000)
+    parser.add_argument("--scenario-id", default="ego_static_obstacle_v0")
+    parser.add_argument("--obstacle-mode", default="static")
+    parser.add_argument("--scenario-notes", default="")
+    parser.add_argument("--scenario-obstacles-json", default="[]")
     return parser.parse_args()
 
 
@@ -222,6 +266,10 @@ def main() -> None:
         goal_delay=args.goal_delay,
         map_topic=args.map_topic,
         map_points=args.map_points,
+        scenario_id=args.scenario_id,
+        obstacle_mode=args.obstacle_mode,
+        scenario_notes=args.scenario_notes,
+        scenario_obstacles_json=args.scenario_obstacles_json,
     )
     try:
         summary = recorder.run()

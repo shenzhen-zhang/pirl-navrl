@@ -8,22 +8,22 @@ def test_diagnostic_jsonl_preserves_task02_required_fields(tmp_path) -> None:
     metadata = {
         "task_id": "TASK_02",
         "output_type": "diagnostic",
-        "platform_id": "gym_pybullet_drones_pybullet",
-        "external_planner": "ego_planner_official_sidecar",
-        "ego_planner_commit": "abc123",
-        "scenario_id": "ego_like_static_v0",
-        "seed": 0,
-        "bridge_status": "mock_ros_unavailable",
+        "route": "official_ego_docker_sidecar",
+        "source_launch": "ego_planner/run_in_sim.launch",
+        "scenario_id": "ego_static_obstacle_v0",
+        "obstacle_mode": "static",
+        "goal": [-8.0, 10.0, 1.0],
     }
 
     with DiagnosticJsonlWriter(path, metadata) as writer:
         writer.write(
             {
+                "record_type": "state",
                 "step": 0,
-                "position": [-4.0, 0.0, 1.0],
-                "goal": [4.0, 0.0, 1.0],
-                "desired_velocity": [1.0, 0.0, 0.0],
-                "min_clearance": 1.0,
+                "elapsed": 0.0,
+                "odom_position": [-18.0, 0.0, 0.0],
+                "ego_command_position": None,
+                "distance_to_goal": None,
             }
         )
 
@@ -31,16 +31,16 @@ def test_diagnostic_jsonl_preserves_task02_required_fields(tmp_path) -> None:
     for field in [
         "task_id",
         "output_type",
-        "platform_id",
-        "external_planner",
-        "ego_planner_commit",
+        "route",
+        "source_launch",
         "scenario_id",
-        "seed",
-        "step",
-        "position",
+        "obstacle_mode",
         "goal",
-        "desired_velocity",
-        "min_clearance",
-        "bridge_status",
+        "record_type",
+        "timestamp",
+        "elapsed",
+        "odom_position",
+        "ego_command_position",
+        "distance_to_goal",
     ]:
         assert field in record

@@ -49,17 +49,17 @@ NavRL 的参考边界见 [`docs/navrl_reference_scope.md`](docs/navrl_reference_
 
 ## 第二阶段计划
 
-第二阶段是 **EGO-Planner 官方侧车桥接与 EGO-like PyBullet 简单场景验证**，仍然不是论文结果阶段。
+第二阶段是 **EGO-Planner 官方 Docker sidecar 与简单障碍场景诊断**，仍然不是论文结果阶段。
 
 第二阶段目标：
 
-1. 将官方 EGO-Planner 作为外部 ROS sidecar 进行桥接可行性验证。
-2. 在 gym-pybullet-drones / PyBullet 中搭建一个 EGO-like 静态障碍简单场景。
-3. 定义 PyBullet 与 EGO-Planner 之间的 state / obstacle / goal / command 桥接协议。
-4. 跑通最小 smoke test，观察是否能完成基本目标推进和静态避障趋势。
-5. 生成小型 diagnostic JSONL，判断后续是否值得发展为 official EGO baseline。
+1. 将官方 EGO-Planner 作为 Docker Noetic ROS sidecar 运行。
+2. 用 PyBullet mirror 显示 official odom / command / map trace。
+3. 定义 future gym-pybullet-drones baseline 所需的 bridge contract。
+4. 维护 static / dynamic / sudden-motion diagnostic scene config。
+5. 生成 official EGO diagnostic JSONL，不作为论文 baseline。
 
-第二阶段明确不做：正式 baseline 对比、论文级指标、多 seed、动态障碍正式测试、NavRL baseline、NavRL 训练栈、EGO-Planner 论文结果复现。
+第二阶段明确不做：正式 baseline 对比、论文级指标、多 seed 统计、动态障碍成功声明、NavRL baseline、NavRL 训练栈、EGO-Planner 论文结果复现。
 
 第二阶段设计见 [`docs/02_phase2_ego_sidecar_plan.md`](docs/02_phase2_ego_sidecar_plan.md)。第二阶段任务见 [`codex_tasks/TASK_02_ego_planner_sidecar_bridge_and_egolike_scene.md`](codex_tasks/TASK_02_ego_planner_sidecar_bridge_and_egolike_scene.md)。
 
