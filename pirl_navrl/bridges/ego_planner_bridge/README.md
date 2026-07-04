@@ -78,6 +78,10 @@ custom PyBullet-style obstacle scene as `/pirl_navrl/custom_scene_cloud`, which
 is remapped into EGO `/grid_map/cloud`. The host PyBullet window mirrors the
 same diagnostic scene and official ROS topics:
 
+The current route is an official EGO diagnostic route, not a baseline. It does
+not close the gym-pybullet-drones control loop and should not be used as a
+paper result.
+
 - red cylinders/spheres: custom TASK_02 obstacles, including dynamic motion
 - yellow sphere/line: official `/visual_slam/odom`
 - green line: official `/planning/pos_cmd`
@@ -89,7 +93,7 @@ The compatibility shortcut below runs the static scenario:
 bash scripts/run_official_ego_pybullet_mirror.sh
 ```
 
-Short local validation on this machine:
+Short local diagnostic observation on this machine:
 
 ```json
 {
@@ -101,9 +105,11 @@ Short local validation on this machine:
 }
 ```
 
-This is the route to use when the question is whether the visualized behavior
-matches the original repository. It mirrors original EGO simulator behavior
-instead of replacing the original controller with a Python point-mass tracker.
+This JSON is a behavior observation from the diagnostic trace, not a baseline
+metric or performance claim. The route uses official EGO planner/controller/
+simulator nodes, but the scene input is a PIRL-NavRL custom pointcloud rather
+than the original upstream demo map generator. PyBullet mirrors ROS topics and
+scene primitives; it is not the gym-pybullet-drones control backend.
 
 The PyBullet mirror renders obstacle maps as regular voxel columns by default.
 For debugging the raw pointcloud instead:
@@ -124,9 +130,13 @@ Scenario definitions live in
 - `ego_sudden_motion_obstacle_v0`: injects a cylinder that starts stationary
   and then moves laterally.
 
-These scenarios demonstrate that our simple PyBullet-style scene can call
+These scenarios diagnose whether our simple PyBullet-style scene can call
 official EGO as planner through ROS pointcloud/goal topics. They are still
 diagnostic scenes, not baseline experiments.
+
+Before this route can become a baseline, it needs an EGO command to
+gym-pybullet-drones action bridge, shared scenario configuration, unified
+metrics, explicit collision/success definitions, and multi-seed evaluation.
 
 ## Removed Simplified PyBullet Bridge
 
