@@ -1,10 +1,10 @@
-# TASK_07：Task06 Hardening for Paper-Ready Multi-Scenario Training
+# TASK_07：Task06 Hardening with NavRL-Style Forest Training Scenes
 
 ## 0. 任务定位
 
 TASK_07 是 TASK_06 的集中修复和强化阶段。
 
-TASK_06 已完成 multi-scenario PPO diagnostic prototype，但审查发现它还不能直接作为后续论文级训练基础。TASK_07 的目标是修复 TASK_06 中的 geometry、scene scale、scenario interaction、training protocol、heuristic sanity、top-down PyBullet replay 和 reporting 问题。
+TASK_06 已完成 multi-scenario PPO diagnostic prototype，但审查发现它还不能直接作为后续论文级训练基础。TASK_07 的目标是修复 TASK_06 中的 geometry、scene scale、forest scenario generation、training protocol、heuristic sanity、top-down PyBullet replay 和 reporting 问题。
 
 TASK_07 不进入 PIRL intent/risk module，不做 EGO baseline，不做正式论文实验，不报告 formal success rate，不声称复现 NavRL，不使用 NavRL checkpoint 或结果，不提交 outputs/checkpoints/GIF/MP4/wandb/TensorBoard。
 
@@ -21,19 +21,149 @@ codex_tasks/TASK_06_navrl_guided_multiscenario_ppo_case_replay.md
 
 TASK_06 的 gate-easy 结果只能作为 diagnostic observation，不能作为 formal result。
 
-## 2. Cylinder-only default training geometry
+## 2. 核心场景原则
+
+TASK_07 的默认场景不应优先实现大量手工特殊 case。
+
+必须优先实现更接近 NavRL Isaac Sim 训练思路的随机森林式训练场景：
+
+```text
+static_forest
+dynamic_forest
+latent_dynamic_forest
+mixed_forest optional
+```
+
+核心原则：
+
+```text
+simple forest-like randomized scenes + obstacle-count curriculum + speed/density curriculum
+```
+
+不要把 TASK_07 做成一堆复杂手工小场景。
+
+## 3. Cylinder-only default training geometry
 
 必须修复 TASK_06 默认训练 geometry。
 
 要求：
 
-- 修改 `pirl_navrl/scenarios/dynamic_curriculum.py`；
-- static / dynamic / latent_dynamic 默认训练障碍全部为 `cylinder`；
+- 默认训练障碍全部为 `cylinder`；
+- static_forest / dynamic_forest / latent_dynamic_forest 中所有默认 obstacle kind == `cylinder`；
 - sphere / mesh / mixed-shape 只能作为 future eval variant；
 - 不允许默认训练场景继续使用 sphere；
 - 更新 tests，断言所有默认训练 obstacle kind == `cylinder`。
 
-## 3. Scene-scale validation
+## 4. Forest curriculum implementation
+
+新增或更新：
+
+```text
+pirl_navrl/scenarios/forest_curriculum.py
+configs/task07_forest_curriculum.json
+```
+
+配置至少包含：
+
+```text
+arena_size
+training_obstacle_kind
+static_obstacle_count_by_level
+dynamic_obstacle_count_by_level
+latent_obstacle_count_by_level
+cylinder_radius_range_by_level
+cylinder_height_range
+dynamic_speed_range_by_level
+latent_trigger_radius_range_by_level
+latent_random_activation_step_range_by_level
+boundary_behavior
+max_episode_steps_by_level
+```
+
+## 5. Static forest
+
+实现随机静态圆柱森林：
+
+```text
+random start / goal
+random static cylinders
+controlled obstacle count and density
+clearance constraints
+reachability check
+```
+
+不要求手工设计 path-near / gate / cluster 类型，但场景不能完全无避障意义，也不能完全堵死。
+
+推荐 levels：
+
+```text
+static_forest_easy
+static_forest_medium
+static_forest_hard
+```
+
+## 6. Dynamic forest
+
+在 static forest 基础上加入 moving cylinders。
+
+默认动态规则：
+
+```text
+random initial position
+random horizontal velocity direction
+speed range controlled by level
+boundary behavior: bounce / wrap / respawn
+```
+
+不要求每个 moving obstacle 都精确穿越 start-goal line。通过大量随机动态障碍和 curriculum 训练动态避障。
+
+推荐 levels：
+
+```text
+dynamic_forest_easy
+dynamic_forest_medium
+dynamic_forest_hard
+```
+
+## 7. Latent dynamic forest
+
+潜在动态障碍实现为 initially inactive dynamic cylinders。
+
+默认 activation：
+
+```text
+if distance(robot, latent_obstacle) < trigger_radius:
+    active = true
+elif step >= random_activation_step:
+    active = true
+```
+
+要求：
+
+```text
+distance trigger is primary
+random delay trigger is secondary or fallback
+after activation, obstacle uses simple sampled linear motion
+future trigger label is not exposed directly to policy
+reject samples where activation is completely irrelevant
+```
+
+推荐比例：
+
+```text
+70% distance-trigger latent obstacles
+30% random-delay latent obstacles
+```
+
+推荐 levels：
+
+```text
+latent_forest_easy
+latent_forest_medium
+latent_forest_hard
+```
+
+## 8. Scene-scale validation
 
 新增训练前 scene-scale validation：
 
@@ -52,87 +182,49 @@ validate_task06_training_scene_scale(...)
 至少检查：
 
 ```text
+all default obstacles are cylinders
 obstacle/drone radius ratio
 start/goal clearance
 obstacle-obstacle spacing
-corridor passability
+free-space density is not impossible
 dynamic obstacle speed ratio
 cylinder height covers flight altitude
 max_steps reachability
 ```
 
-更新 `configs/task06_multiscenario_curriculum.json` 或新增 `configs/task07_multiscenario_curriculum.json`，包含明确 scene-scale fields：
-
-```text
-training_obstacle_kind
-drone_collision_radius
-safety_margin
-cylinder_radius_range_by_group
-cylinder_height_range
-obstacle_drone_radius_ratio_range
-min_start_goal_clearance
-min_obstacle_obstacle_clearance
-min_corridor_width
-dynamic_obstacle_speed_range
-dynamic_to_drone_speed_ratio_range
-max_episode_steps_by_group
-```
-
 所有 scale 设置都要参考 NavRL，并记录具体 NavRL 文件/config 到 `docs/navrl_guided_training_adjustments_task06.md` 或新增 `docs/navrl_guided_training_adjustments_task07.md`。
 
-## 4. Interaction-driven scenario design
-
-场景必须体现避障交互，而不是只是存在障碍物。
+## 9. Forest validation
 
 新增：
 
 ```text
-validate_avoidance_interaction(...)
+validate_forest_training_scene(...)
 ```
 
-### Static
-
-要求：
-
-- cylinder near nominal start-goal corridor；
-- straight-line / goal-tracking policy has low-clearance or collision risk；
-- still passable by a clearance-aware policy；
-- obstacle 不允许离路径太远以至于不影响导航。
-
-### Dynamic
-
-要求：
-
-- moving cylinder crosses the nominal drone corridor；
-- crossing time overlaps expected drone arrival time；
-- straight-line policy has near-miss or collision risk；
-- reactive heuristic can improve clearance or avoid collision。
-
-### Latent dynamic
-
-潜在动态默认采用距离触发：
+至少检查：
 
 ```text
-trigger_mode = distance_to_drone
-trigger_radius configurable
-fallback_trigger_step optional
+start and goal valid
+not inside obstacle margins
+not fully blocked
+coarse reachable path exists or heuristic can make progress
+dynamic obstacles move in relevant arena region
+latent obstacles can activate by distance or delay
+activated latent motion is not completely irrelevant
+rollout metrics are finite
 ```
 
-要求：
+不要求每个动态障碍都精确横穿 start-goal line；只要求整体随机场景有训练意义、可达、有避障压力。
 
-- obstacle initially stationary or low-risk；
-- when drone enters trigger_radius, obstacle begins crossing the corridor；
-- future trigger label must not be exposed directly to the policy；
-- eval can classify latent_trigger_failure。
-
-## 5. Training protocol hardening
+## 10. Training protocol hardening
 
 新增或修复训练脚本，使其支持：
 
 ```text
 --mode full
 --mode smoke
---scenario-group static|dynamic|latent_dynamic|mixed_static_dynamic
+--scenario-group static_forest|dynamic_forest|latent_dynamic_forest|mixed_forest
 ```
 
 要求：
@@ -153,7 +245,7 @@ scripts/train_task07_hardened_multiscenario.py
 
 也可以扩展现有 TASK_06 训练脚本，但必须保持 TASK_06 历史结果可解释。
 
-## 6. Random / heuristic / trained 三方对比
+## 11. Random / heuristic / trained 三方对比
 
 新增 heuristic sanity policies：
 
@@ -182,7 +274,7 @@ trained beats heuristic -> policy may be learning useful behavior
 
 heuristic 不是 formal baseline，不得作为论文 baseline 报告。
 
-## 7. Top-down PyBullet renderer
+## 12. Top-down PyBullet renderer
 
 当前 Matplotlib JSONL replay 可保留为 fallback，但 TASK_07 必须新增真正 PyBullet top-down renderer。
 
@@ -198,12 +290,12 @@ scripts/render_task07_topdown_pybullet_case.py
 - camera fixed above arena and points downward；
 - show drone, start, goal, cylinder footprint, trajectory；
 - show dynamic obstacle path；
-- show latent trigger state when relevant；
+- show latent activation state when relevant；
 - show success/collision/timeout/failure_type；
 - output GIF or MP4 under ignored outputs；
 - if rendering fails, write fallback summary JSON with reason。
 
-## 8. Diagnostics and reports
+## 13. Diagnostics and reports
 
 新增或更新：
 
@@ -221,9 +313,11 @@ docs/TASK_07_BLOCKED_REPORT.md
 Reports 必须说明：
 
 - TASK_06 gate-easy result 是 diagnostic，不是 formal result；
-- cylinder-only 是否完成；
-- scene-scale validation 是否在 PPO 前执行；
-- interaction validation 是否证明三类场景确实体现避障；
+- why the new scenes are NavRL-style forest-like scenes；
+- how static/dynamic/latent forest levels differ；
+- how latent activation works；
+- how forest validation rejects bad samples；
+- how curriculum changes obstacle count, density, or speed；
 - 每类场景 random / heuristic / trained 对比；
 - top-down PyBullet replay 是否生成；
 - 哪些内容仍 blocked。
@@ -237,10 +331,10 @@ action_stats.json
 control_tracking_error.json
 distance_curve.json
 reachability_report.json
-interaction_validation_report.json
+forest_scene_validation_report.json
 ```
 
-## 9. Tests
+## 14. Tests
 
 新增或更新 tests，至少覆盖：
 
@@ -248,26 +342,26 @@ interaction_validation_report.json
 cylinder-only default training scenes
 non-cylinder default scene rejected
 scene-scale validation pass/fail
-corridor passability validation
-dynamic crossing interaction validation
+forest scene validation pass/fail
+dynamic obstacle motion and boundary behavior
 latent distance-trigger activation
-straight-line policy risky check
-heuristic policy finite action and safer-than-straight check
+latent random-delay activation
+heuristic policy finite action and progress check
 training mode full/smoke status schema
 top-down PyBullet renderer fallback schema
 report templates contain required fields
 ```
 
-## 10. 验收标准
+## 15. 验收标准
 
 TASK_07 完成时必须满足：
 
 1. `pytest -q` 通过；
-2. static / dynamic / latent_dynamic 默认训练障碍全部为 cylinder；
+2. static_forest / dynamic_forest / latent_dynamic_forest 默认训练障碍全部为 cylinder；
 3. scene-scale validation 在 PPO 前执行；
-4. static / dynamic / latent_dynamic 都通过 scene-scale validation；
-5. static / dynamic / latent_dynamic 都通过 avoidance interaction validation；
-6. latent_dynamic 默认采用 distance-to-drone trigger，fixed step trigger 只能作为 fallback；
+4. 三类 forest 场景都通过 scene-scale validation；
+5. 三类 forest 场景都通过 forest scene validation；
+6. latent_dynamic_forest 默认支持 distance-to-drone trigger，并可选 random-delay trigger；
 7. train script 支持 full / smoke / blocked 状态；
 8. smoke 不会被标记为 completed；
 9. 每类场景都有 random / heuristic / trained eval summary；
@@ -277,7 +371,7 @@ TASK_07 完成时必须满足：
 13. TASK_06 gate-easy 结果被明确标记为 diagnostic，不是 formal result；
 14. 不提交 outputs、checkpoints、GIF、MP4、TensorBoard、wandb。
 
-## 11. 明确不做
+## 16. 明确不做
 
 TASK_07 不做：
 
