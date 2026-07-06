@@ -12,7 +12,7 @@ TASK_07 的核心输出：
 cylinder-only default training geometry
 NavRL-style forest-like randomized scenes
 scene-scale validation before PPO
-parameter convergence and freeze policy
+validated parameter convergence and evidence-based freeze policy
 full / smoke / blocked training protocol
 random / heuristic / trained sanity comparison
 PyBullet top-down case replay
@@ -227,14 +227,26 @@ random / heuristic rollout metrics are finite
 
 如果场景完全不可达、完全没有训练意义、或 latent activation 永远无关，不能作为默认训练样本。
 
-## 10. Parameter convergence and freeze policy
+## 10. Parameter convergence, validation, and evidence-based freeze policy
 
-TASK_07 必须把“可变项太多”的问题收敛下来。目标不是继续无限调参，而是参考 NavRL 建立一套默认训练栈，然后主要通过 curriculum 改变场景难度。
+TASK_07 必须把“可变项太多”的问题收敛下来，但不得盲目冻结参数。正确顺序是：
+
+```text
+NavRL-inspired candidate defaults
+-> diagnostic validation
+-> validated defaults
+-> frozen defaults
+-> curriculum training
+-> evidence-based unfreeze if needed
+```
+
+冻结不是永久不可修改，而是默认稳定。只有记录了验证证据后，参数才能标记为 `frozen`；只有通过明确失败诊断，才允许解冻。
 
 必须新增：
 
 ```text
 docs/task07_parameter_freeze_matrix.md
+docs/task07_parameter_change_log.md
 configs/task07_default_ppo.json
 configs/task07_default_reward.json
 configs/task07_default_observation.json
@@ -244,16 +256,29 @@ configs/task07_default_observation.json
 
 ```text
 Parameter
-Category: frozen / tune_once / curriculum
+Category: system / training / curriculum
+Status: candidate / validated / frozen
 Default value
+Validation evidence
 NavRL reference
-Allowed to change after Task7?
-Change condition
+Can change after freeze?
+Unfreeze condition
+Change log path
 ```
 
-### 10.1 Frozen parameters
+### 10.1 Status semantics
 
-以下内容应在 TASK_07 中尽快冻结，后续不得随意修改：
+```text
+candidate: candidate default, may be revised during Task07 validation
+validated: passed diagnostic checks, but not final frozen yet
+frozen: passed freeze gate; default-stable unless evidence-based unfreeze is documented
+```
+
+不得把未经验证的参数直接标记为 frozen。
+
+### 10.2 Freeze-after-validation parameters
+
+以下内容应在 TASK_07 中完成验证后冻结，后续不得随意修改：
 
 ```text
 observation schema
@@ -279,9 +304,9 @@ dynamic_obstacle
 
 flat observation 只保留为 debug fallback。
 
-### 10.2 Tune-once parameters
+### 10.3 Tune-once parameters
 
-以下内容可在 TASK_07 中短期调一次，形成默认配置后冻结：
+以下内容可在 TASK_07 中短期调一次，形成默认配置后再经过验证进入 frozen 状态：
 
 ```text
 PPO learning_rate
@@ -301,7 +326,7 @@ progress weight
 
 默认 PPO / policy stack 应密切参考 NavRL 的训练结构和参数尺度。可以使用 SB3 适配，但必须记录对应 NavRL 文件或 config。
 
-### 10.3 Curriculum parameters
+### 10.4 Curriculum parameters
 
 TASK_07 之后，后续训练主要允许变化 curriculum 参数：
 
@@ -319,7 +344,49 @@ episode horizon
 
 后续融合场景训练中，默认规则是：先固定 observation / reward / PPO / action / control，再调 curriculum。只有有明确 failure diagnosis 时，才允许解冻 PPO 或 reward。
 
-### 10.4 Freeze gate
+### 10.5 Validation evidence before freeze
+
+冻结前必须收集并记录验证证据。
+
+Observation validation 至少包括：
+
+```text
+obs_stats finite
+key features are not constant
+lidar / dynamic_obstacle features vary in relevant scenes
+nearest obstacle information is usable
+```
+
+Reward validation 至少包括：
+
+```text
+reward terms finite
+no single term dominates unexpectedly
+progress reward encourages goal approach
+clearance penalty does not make the policy only hide
+collision penalty does not make the policy freeze in place
+```
+
+Action/control validation 至少包括：
+
+```text
+desired_velocity and actual_velocity are consistent enough
+action clipping is not persistently saturated
+altitude behavior does not break horizontal avoidance
+action semantics are visible in top-down replay
+```
+
+PPO validation 至少包括：
+
+```text
+loss does not explode
+entropy does not immediately collapse
+value loss is not persistently abnormal
+2-3 seeds do not fully collapse
+forest_easy tasks show learning effect
+```
+
+### 10.6 Freeze gate
 
 TASK_07 结束时，不要求完成正式大规模训练，但必须冻结默认训练栈。冻结 gate：
 
@@ -334,7 +401,31 @@ reward/obs/action diagnostics show no NaN, saturation, or scale anomaly
 top-down replay behavior is reasonable
 ```
 
-冻结后，除非 blocked report 明确证明默认训练栈有问题，否则不得继续随意调 PPO / reward / observation / action。
+### 10.7 Evidence-based unfreeze rule
+
+冻结后，除非 blocked report 或 parameter change log 明确证明默认训练栈有问题，否则不得继续随意调 PPO / reward / observation / action。
+
+允许解冻的例子：
+
+```text
+observation unfreeze: dynamic or latent features are unusable, constant, or repeatedly cause late reaction failures
+reward unfreeze: policy only rushes goal, only hides, freezes in place, or reward terms are badly scaled
+PPO unfreeze: multiple seeds show no learning effect and training diagnostics show PPO-specific instability
+action/control unfreeze: desired and actual motion diverge or action clipping remains high
+```
+
+每次解冻必须记录：
+
+```text
+changed parameter
+old value
+new value
+evidence
+NavRL reference
+expected effect
+validation result
+whether the parameter returns to frozen status
+```
 
 ## 11. Training protocol hardening
 
@@ -449,8 +540,9 @@ docs/TASK_07_BLOCKED_REPORT.md
 - scene-scale validation 是否在 PPO 前执行；
 - forest scene validation 是否证明场景可达且有训练意义；
 - parameter freeze matrix 是否完成；
-- 默认 PPO / reward / observation 是否冻结；
+- 默认 PPO / reward / observation 是否经过验证后冻结；
 - 哪些参数仍允许作为 curriculum 变化；
+- 是否存在解冻记录以及解冻证据；
 - 每类场景 random / heuristic / trained 对比结果；
 - top-down PyBullet replay 是否生成；
 - 哪些内容仍 blocked。
@@ -465,6 +557,7 @@ control_tracking_error.json
 distance_curve.json
 reachability_report.json
 forest_scene_validation_report.json
+parameter_validation_report.json
 ```
 
 ## 15. Tests
@@ -483,6 +576,8 @@ heuristic policy finite action and progress check
 training mode full/smoke status schema
 top-down PyBullet renderer fallback schema
 parameter freeze matrix schema
+parameter status candidate/validated/frozen schema
+parameter change log schema
 default PPO / reward / observation config exists
 report templates contain required fields
 ```
@@ -503,10 +598,12 @@ TASK_07 完成时必须满足：
 10. 每类都有 success 或 best_non_success case；
 11. 每类都有 representative failure case；
 12. 每类有 top-down PyBullet GIF/video 或明确 fallback summary；
-13. parameter freeze matrix 完成，并明确 frozen / tune_once / curriculum 三类；
-14. 默认 PPO / reward / observation 配置存在，并说明 NavRL 参考；
-15. TASK_06 gate-easy 结果被明确标记为 diagnostic，不是 formal result；
-16. 不提交 outputs、checkpoints、GIF、MP4、TensorBoard、wandb。
+13. parameter freeze matrix 完成，并明确 system / training / curriculum 以及 candidate / validated / frozen 状态；
+14. 默认 PPO / reward / observation 配置存在，并说明 NavRL 参考和验证证据；
+15. frozen 参数不能没有 validation evidence；
+16. 如果发生解冻，必须有 parameter change log 和 failure diagnosis；
+17. TASK_06 gate-easy 结果被明确标记为 diagnostic，不是 formal result；
+18. 不提交 outputs、checkpoints、GIF、MP4、TensorBoard、wandb。
 
 ## 17. 明确不做
 
